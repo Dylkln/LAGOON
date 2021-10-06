@@ -165,8 +165,7 @@ def save_stats(output, al_ssn, al_filt, nb_nssn, nb_nfilt):
 
 def main():
     args = arguments()
-    if not args:
-        print("Please enter some arguments, see --help / -h for more infos")
+
 
     if args.fasta_files and args.annotation_files:
         path = "./results/"
@@ -187,7 +186,7 @@ def main():
 
 
     else:
-        pass
+        print("Please enter some arguments, see --help / -h for more infos")
 
 
 if __name__ == '__main__':
