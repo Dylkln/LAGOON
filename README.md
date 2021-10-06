@@ -3,8 +3,8 @@
 ## Prerequisites
 
 The use of [Miniconda3](https://docs.conda.io/en/latest/miniconda.html) is strongly recommended.
-
-It is important that your data is standardized.
+This program uses [Diamond](https://github.com/bbuchfink/diamond), you must install it.
+You also must have standardized data.
 The format of your data must be like this :
 
 
