@@ -14,6 +14,7 @@ import csv
 import io
 import gzip
 import glob
+import time
 
 
 # ============================================================================= #
@@ -50,6 +51,12 @@ def percentage(part, whole):
   return str(round(percent, 2)) + "%"
 
 
+def read_file(file):
+    with open(file, "r") as f:
+        for line in f:
+            yield line
+
+
 def read_fasta_files(files, output):
     out = open(output, "w")
     for file in files:
@@ -71,9 +78,9 @@ def create_diamond_db(fasta_file):
 
 
 def diamond_blastp(db, fasta_file, output):
-    command = ["diamond-aligner", "blastp", "-d", db, "-q", fasta_file, "-o", output, "-e", "1e-5", "--sensitive", "-f",
-               "6", "qseqid", "qlen", "qstart", "qend", "sseqid", "slen", "sstart", "send", "length", "pident", "ppos",
-               "score", "evalue", "bitscore"]
+    command = ["diamond-aligner", "blastp", "-d", db, "-q", fasta_file, "-o", output, "-e",
+               "1e-5", "--sensitive", "-f", "6", "qseqid", "qlen", "qstart", "qend", "sseqid",
+               "slen", "sstart", "send", "length", "pident", "ppos", "score", "evalue", "bitscore"]
     subprocess.call(command, stdout=DEVNULL)
 
 
@@ -148,7 +155,7 @@ def filter_file(identity, overlap, ssn):
             output_stats = f"{output}_stats"
             save_stats(output_stats, al_ssn, al_filt, nb_nssn, nb_nfilt)
             print("*** CREATING EDGES AND VERTICES FILE ***")
-            create_vertices_edges_files(output)
+            diamond2graph(output)
 
 
 def save_stats(output, al_ssn, al_filt, nb_nssn, nb_nfilt):
@@ -163,9 +170,34 @@ def save_stats(output, al_ssn, al_filt, nb_nssn, nb_nfilt):
         f.write(f"nb of nodes removed : {rmnb} ({percentage(rmnb, nb_nssn)})\n")
 
 
-def main():
-    args = arguments()
+def diamond2graph(diamond_output):
+    ids = set()
+    fieldnames = "from;to;query_length;subject_length;alignment_len;pident;evalue;bitscore"
+    edges = open(f"{diamond_output}.edges", "w")
+    vertices = open(f"{diamond_output}.vertices", "w")
+    edges.write(f"{fieldnames}\n")
+    vertices.write("name;prefix\n")
+    for line in read_file(diamond_output):
+        tab = line.split("\t")
+        qsid, qlen, ssid, slen, leng, pid, eval, bscore = tab[0], tab[1], tab[4],\
+                                                          tab[5], tab[8], tab[9],\
+                                                          tab[12], tab[13]
+        edges.write(f"{qsid};{ssid};{qlen};{slen};{leng};{pid};{eval};{bscore}")
 
+        if qsid not in ids:
+            ids.add(qsid)
+        if ssid not in ids:
+            ids.add(ssid)
+
+    ids = sorted(ids)
+
+    for i in ids:
+        prefix = i.split(".")[0]
+        vertices.write(f"{i};{prefix}\n")
+
+def main():
+    start = time.time()
+    args = arguments()
 
     if args.fasta_files and args.annotation_files:
         path = "./results/"
@@ -178,16 +210,14 @@ def main():
         if not os.path.exists(ssn):
             diamond_blastp(db, fasta, ssn)
 
-
     if args.overlap and args.identity:
         print("filtering informations provided")
         ssn = "./results/diamond_ssn"
         filter_file(args.identity, args.overlap, ssn)
 
-
     else:
         print("Please enter some arguments, see --help / -h for more infos")
 
-
+    print(f"it took {round((time.time() - start), 2)} seconds")
 if __name__ == '__main__':
     main()
