@@ -72,16 +72,30 @@ def read_fasta_files(files, output):
 
 def create_diamond_db(fasta_file):
     db = "./results/all_data_db"
-    command = ["diamond-aligner", "makedb", "--in", fasta_file, "--db", db]
-    subprocess.call(command, stdout=DEVNULL)
+    try:
+        command = ["diamond-aligner", "makedb", "--in", fasta_file, "--db", db]
+        subprocess.call(command, stdout=DEVNULL)
+
+    except:
+        command = ["diamond", "makedb", "--in", fasta_file, "--db", db]
+        subprocess.call(command, stdout=DEVNULL)
     return db
 
 
 def diamond_blastp(db, fasta_file, output):
-    command = ["diamond-aligner", "blastp", "-d", db, "-q", fasta_file, "-o", output, "-e",
+
+    try:
+        command = ["diamond-aligner", "blastp", "-d", db, "-q", fasta_file, "-o", output, "-e",
                "1e-5", "--sensitive", "-f", "6", "qseqid", "qlen", "qstart", "qend", "sseqid",
                "slen", "sstart", "send", "length", "pident", "ppos", "score", "evalue", "bitscore"]
-    subprocess.call(command, stdout=DEVNULL)
+        subprocess.call(command, stdout=DEVNULL)
+
+    except:
+        command = ["diamond", "blastp", "-d", db, "-q", fasta_file, "-o", output, "-e",
+                   "1e-5", "--sensitive", "-f", "6", "qseqid", "qlen", "qstart", "qend", "sseqid",
+                   "slen", "sstart", "send", "length", "pident", "ppos", "score", "evalue",
+                   "bitscore"]
+        subprocess.call(command, stdout=DEVNULL)
 
 
 def create_vertices_edges_files(ssn):
