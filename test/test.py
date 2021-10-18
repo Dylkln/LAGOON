@@ -57,6 +57,16 @@ def read_file(file):
             yield line
 
 
+def get_files_from_arg(file):
+
+    files = []
+    with open(file, "r") as f_in:
+        for line in f_in:
+            files.append(line.strip())
+
+    return files
+
+
 def read_fasta_files(files, output):
     out = open(output, "w")
     for file in files:
@@ -217,21 +227,43 @@ def main():
         path = "./results/"
         if not os.path.exists(path):
             os.mkdir(path)
-        fasta = "./results/all_data.fasta"
-        read_fasta_files(args.fasta_files, fasta)
-        db = create_diamond_db(fasta)
-        ssn = "./results/diamond_ssn"
-        if not os.path.exists(ssn):
+
+        if len(args.fasta_files) > 1:
+            fasta = "./results/all_data.fasta"
+            read_fasta_files(args.fasta_files, fasta)
+            db = create_diamond_db(fasta)
+            ssn = "./results/diamond_ssn"
+#            if not os.path.exists(ssn):
             diamond_blastp(db, fasta, ssn)
+
+        elif args.fasta_files[0].endswith(".pep"):
+            fasta = "./results/all_data.fasta"
+            read_fasta_files(args.fasta_files, fasta)
+            db = create_diamond_db(fasta)
+            ssn = "./results/diamond_ssn"
+#            if not os.path.exists(ssn):
+            diamond_blastp(db, fasta, ssn)
+
+        else:
+            files = get_files_from_arg(args.fasta_files[0])
+            fasta = "./results/all_data.fasta"
+            read_fasta_files(files, fasta)
+            db = create_diamond_db(fasta)
+            ssn = "./results/diamond_ssn"
+#            if not os.path.exists(ssn):
+            diamond_blastp(db, fasta, ssn)
+
 
     if args.overlap and args.identity:
         print("filtering informations provided")
         ssn = "./results/diamond_ssn"
         filter_file(args.identity, args.overlap, ssn)
 
-    else:
+    if not args:
         print("Please enter some arguments, see --help / -h for more infos")
 
     print(f"it took {round((time.time() - start), 2)} seconds")
+
+
 if __name__ == '__main__':
     main()
