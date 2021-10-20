@@ -29,11 +29,11 @@ familiarize yourself with the available arguments. Please see the list of argume
 
     # Optional Arguments
     parser.add_argument("-tr", dest="fasta_files",
-                        type=str, required=False, nargs="+",
+                        type=str, required=False, default=None, nargs="+",
                         help="either a path to find files in fasta format or a file containing the list of all path \
 to files in fasta format.")
     parser.add_argument("-an", dest="annotation_files",
-                        type=str, required=False, nargs="+",
+                        type=str, required=False, default=None, nargs="+",
                         help="either a path to find annotation files or a file containing the list of all path \
 to annotation files.")
     parser.add_argument("-ov", "--overlap", dest="overlap",
@@ -42,6 +42,9 @@ to annotation files.")
     parser.add_argument("-id", "--identity", dest="identity",
                         type=float, required=False, default=None, nargs="+",
                         help="the filtration wanted of a diamond output")
+    parser.add_argument("-cn", "--columns", dest="columns",
+                        type=float, required=False, default=None, nargs="+",
+                        help="the names of the columns wanted in attributes")
 
     return parser.parse_args()
 
@@ -219,6 +222,7 @@ def diamond2graph(diamond_output):
         prefix = i.split(".")[0]
         vertices.write(f"{i};{prefix}\n")
 
+
 def main():
     start = time.time()
     args = arguments()
@@ -263,7 +267,6 @@ def main():
         print("Please enter some arguments, see --help / -h for more infos")
 
     print(f"it took {round((time.time() - start), 2)} seconds")
-
 
 if __name__ == '__main__':
     main()
