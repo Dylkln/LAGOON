@@ -29,11 +29,11 @@ familiarize yourself with the available arguments. Please see the list of argume
 
     # Optional Arguments
     parser.add_argument("-tr", dest="fasta_files",
-                        type=str, required=False, nargs="+",
+                        type=str, required=False, default=None, nargs="+",
                         help="either a path to find files in fasta format or a file containing the list of all path \
 to files in fasta format.")
     parser.add_argument("-an", dest="annotation_files",
-                        type=str, required=False, nargs="+",
+                        type=str, required=False, default=None, nargs="+",
                         help="either a path to find annotation files or a file containing the list of all path \
 to annotation files.")
     parser.add_argument("-ov", "--overlap", dest="overlap",
@@ -42,6 +42,9 @@ to annotation files.")
     parser.add_argument("-id", "--identity", dest="identity",
                         type=float, required=False, default=None, nargs="+",
                         help="the filtration wanted of a diamond output")
+    parser.add_argument("-cn", "--columns", dest="columns",
+                        type=str, required=False, default=None, nargs="+",
+                        help="The columns names used in attributes")
 
     return parser.parse_args()
 
@@ -219,14 +222,62 @@ def diamond2graph(diamond_output):
         prefix = i.split(".")[0]
         vertices.write(f"{i};{prefix}\n")
 
+
+def adapt_row(row, columns):
+    d = {}
+    for k, v in row.items():
+        if k in columns:
+            d[k] = v
+
+    for i in columns:
+        if i not in d.keys():
+            d[i] = "NA"
+
+    return d
+
+
+def create_attributes_dict(an_files, columns):
+    at_dict = {}
+    for file in an_files:
+        reader = csv.DictReader(open(file), delimiter="\t")
+        for row in reader:
+            n = row["peptides"].split(".")[0]
+            d = adapt_row(row, columns)
+            if n not in at_dict.keys():
+                at_dict[n] = {}
+            for k, v in d.items():
+                if k not in at_dict[n].keys():
+                    at_dict[n][k] = set()
+                at_dict[n][k].add(v)
+            print(at_dict)
+
+    return at_dict
+
+
+def save_attributes(at_dict):
+    for k, v in at_dict.items():
+        output = f"./results/attributes/{k}.attrib"
+        fields = v.keys()
+
+        with open(output, "w") as f:
+            f.write(f"{fields}\n")
+            for v2 in v.values():
+                for val in v2:
+                    f.write()
+
 def main():
     start = time.time()
     args = arguments()
 
-    if args.fasta_files and args.annotation_files:
+
+    if args.fasta_files and args.annotation_files and args.columns:
         path = "./results/"
         if not os.path.exists(path):
             os.mkdir(path)
+
+        at_dict = create_attributes_dict(args.annotation_files, args.columns)
+        print(at_dict)
+
 
         if len(args.fasta_files) > 1:
             fasta = "./results/all_data.fasta"
