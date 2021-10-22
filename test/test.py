@@ -225,45 +225,53 @@ def diamond2graph(diamond_output):
 
 def adapt_row(row, columns):
     d = {}
+    n = row[columns[0]]
+    c = columns[1:]
+
     for k, v in row.items():
-        if k in columns:
+        if k in c:
             d[k] = v
 
-    for i in columns:
-        if i not in d.keys():
-            d[i] = "NA"
+    for k, v in d.items():
+        if v == None:
+            d[k] = "NA"
 
-    return d
+    return d, n, c
 
 
 def create_attributes_dict(an_files, columns):
     at_dict = {}
     for file in an_files:
         reader = csv.DictReader(open(file), delimiter="\t")
+        n = file.split("-")[1]
         for row in reader:
-            n = row["peptides"].split(".")[0]
-            d = adapt_row(row, columns)
+            d, nc, c = adapt_row(row, columns)
             if n not in at_dict.keys():
                 at_dict[n] = {}
+            if nc not in at_dict[n].keys():
+                at_dict[n][nc] = {k : set() for k in d.keys()}
             for k, v in d.items():
-                if k not in at_dict[n].keys():
-                    at_dict[n][k] = set()
-                at_dict[n][k].add(v)
-            print(at_dict)
+                at_dict[n][nc][k].add(v)
 
     return at_dict
 
 
-def save_attributes(at_dict):
+def save_attributes(at_dict, columns):
+    path = "./results/attributes/"
+    if not os.path.exists(path):
+        os.mkdir(path)
+
     for k, v in at_dict.items():
-        output = f"./results/attributes/{k}.attrib"
-        fields = v.keys()
+        tmp = "-".join(k.split("-")[0:2])
+        output = f"./results/attributes/{tmp}.attrib"
+        fields = ";".join(columns)
 
         with open(output, "w") as f:
             f.write(f"{fields}\n")
-            for v2 in v.values():
-                for val in v2:
-                    f.write()
+            for k2, v2 in v.items():
+                lwrite = [i for i in v2.values()]
+                lwrite = ";".join([",".join(i) for i in lwrite])
+                f.write(f"{k2};{lwrite}\n")
 
 def main():
     start = time.time()
@@ -275,8 +283,9 @@ def main():
         if not os.path.exists(path):
             os.mkdir(path)
 
+
         at_dict = create_attributes_dict(args.annotation_files, args.columns)
-        print(at_dict)
+        save_attributes(at_dict, args.columns)
 
 
         if len(args.fasta_files) > 1:
