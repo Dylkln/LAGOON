@@ -44,7 +44,13 @@ to annotation files.")
                         help="the filtration wanted of a diamond output")
     parser.add_argument("-cn", "--columns", dest="columns",
                         type=str, required=False, default=None, nargs="+",
-                        help="The columns names used in attributes")
+                        help="the columns names used in attributes")
+    parser.add_argument("-g", "--graph", dest="graph",
+                        type=str, required=False, default=None, nargs="+",
+                        help="a sequence similarity network graph")
+    parser.add_argument("-t", "--table", dest="table",
+                        type=str, required=False, default=None, nargs="+",
+                        help="a table used to create the sequence similarity network graph")
 
     return parser.parse_args()
 
@@ -55,9 +61,15 @@ def percentage(part, whole):
 
 
 def read_file(file):
-    with open(file, "r") as f:
-        for line in f:
-            yield line
+    if file.endswith(".gz"):
+        with gzip.open(file, "rt") as f:
+            for line in f:
+                yield line
+
+    else:
+        with open(file, "r") as f:
+            for line in f:
+                yield line
 
 
 def get_files_from_arg(file):
@@ -118,8 +130,8 @@ def create_vertices_edges_files(ssn):
 
 def filter(inputfile, outputfile, cov, ident):
     al_ssn, al_filt, nb_nssn, nb_nfilt = 0, 0, 0, 0
-    n_ssn = set([])
-    n_filt = set([])
+    n_ssn = set()
+    n_filt = set()
 
     fieldnames = ["qseqid", "qlen", "qstart", "qend", "sseqid", "slen",
                   "sstart", "send", "length", "pident", "ppos", "score", "evalue",
@@ -241,19 +253,36 @@ def adapt_row(row, columns):
 
 def create_attributes_dict(an_files, columns):
     at_dict = {}
-    for file in an_files:
-        reader = csv.DictReader(open(file), delimiter="\t")
-        n = file.split("-")[1]
-        for row in reader:
-            d, nc, c = adapt_row(row, columns)
-            if n not in at_dict.keys():
-                at_dict[n] = {}
-            if nc not in at_dict[n].keys():
-                at_dict[n][nc] = {k : set() for k in d.keys()}
-            for k, v in d.items():
-                at_dict[n][nc][k].add(v)
 
-    return at_dict
+    if len(an_files) == 1:
+        files = get_files_from_arg(an_files)
+        for file in files:
+            reader = csv.DictReader(open(file), delimiter="\t")
+            n = file.split("-")[1]
+            for row in reader:
+                d, nc, c = adapt_row(row, columns)
+                if n not in at_dict.keys():
+                    at_dict[n] = {}
+                if nc not in at_dict[n].keys():
+                    at_dict[n][nc] = {k: set() for k in d.keys()}
+                for k, v in d.items():
+                    at_dict[n][nc][k].add(v)
+        return at_dict
+
+
+    else:
+        for file in an_files:
+            reader = csv.DictReader(open(file), delimiter="\t")
+            n = file.split("-")[1]
+            for row in reader:
+                d, nc, c = adapt_row(row, columns)
+                if n not in at_dict.keys():
+                    at_dict[n] = {}
+                if nc not in at_dict[n].keys():
+                    at_dict[n][nc] = {k : set() for k in d.keys()}
+                for k, v in d.items():
+                    at_dict[n][nc][k].add(v)
+        return at_dict
 
 
 def save_attributes(at_dict, columns):
@@ -273,12 +302,38 @@ def save_attributes(at_dict, columns):
                 lwrite = ";".join([",".join(i) for i in lwrite])
                 f.write(f"{k2};{lwrite}\n")
 
+
+def get_index(files):
+
+    nodes = set()
+    n_dict = {}
+    i = 0
+
+    for file in files:
+        for line in read_file(file):
+            l = line.split("\t")[0]
+            if l not in nodes:
+                nodes.add(l)
+                n_dict[l] = i
+                i += 1
+
+        for line in read_file(file):
+            l = line.split("\t")[4]
+            if l not in nodes:
+                nodes.add(l)
+                n_dict[l] = i
+                i += 1
+
+    return n_dict
+
+
 def main():
     start = time.time()
     args = arguments()
-
+    x = None
 
     if args.fasta_files and args.annotation_files and args.columns:
+        x = 1
         path = "./results/"
         if not os.path.exists(path):
             os.mkdir(path)
@@ -315,11 +370,12 @@ def main():
 
 
     if args.overlap and args.identity:
+        x = 1
         print("filtering informations provided")
         ssn = "./results/diamond_ssn"
         filter_file(args.identity, args.overlap, ssn)
 
-    if not args:
+    if not x:
         print("Please enter some arguments, see --help / -h for more infos")
 
     print(f"it took {round((time.time() - start), 2)} seconds")
