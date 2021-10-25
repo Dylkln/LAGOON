@@ -66,6 +66,7 @@ to annotation files.
 - ***IDENTITY*** : The percentage of identity between sequences used as filtration parameter.
 - ***COLUMN_NAMES*** : The names of the columns wanted as attributes for the sequence similarity network.
 
+
 ### Example of utilisation
 
 You can familiarize yourself with the program using the test script.

@@ -342,7 +342,6 @@ def main():
         at_dict = create_attributes_dict(args.annotation_files, args.columns)
         save_attributes(at_dict, args.columns)
 
-
         if len(args.fasta_files) > 1:
             fasta = "./results/all_data.fasta"
             read_fasta_files(args.fasta_files, fasta)
