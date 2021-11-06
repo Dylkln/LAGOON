@@ -1,0 +1,14 @@
+fasta: "tr_files_test/*"
+annotation: "an_files_test/*"
+columns:
+  - peptides
+  - length
+  - database
+filtration:
+  overlap:
+    - 80
+  identity:
+    - 80
+    - 85
+neighbours: 3
+isolated: "yes"
