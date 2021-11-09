@@ -173,13 +173,11 @@ def find_output(file, outputs):
 
 def main():
 
+    fieldnames = ["name", "prefix"] + snakemake.params.columns[1:]
+    files = snakemake.input.attrib
 
-    args = arguments()
-    fieldnames = ["name", "prefix"] + args.columns[1:]
-    files = args.attribute_files
-
-    for file in args.vertices_file:
-        out = find_output(file, args.output)
+    for file in snakemake.input.vertices:
+        out = find_output(file, snakemake.output)
         f_out = open(out, "w")
         writer = csv.DictWriter(f_out, delimiter=";", fieldnames=fieldnames)
         writer.writeheader()
@@ -209,7 +207,7 @@ def main():
                     fn = get_fname(nset[0], files)
 
                     if fn:
-                        rows = get_rows(nset, fn, args.columns)
+                        rows = get_rows(nset, fn, snakemake.params.columns)
                         write_rows(writer, rows)
                     nset = {n}
                     previous_n = "-".join(n.split("-")[0:2])
@@ -226,7 +224,7 @@ def main():
                 fn = get_fname(nset[0], files)
 
                 if fn:
-                    rows = get_rows(nset, fn, args.columns)
+                    rows = get_rows(nset, fn, snakemake.params.columns)
                     write_rows(writer, rows)
 
 

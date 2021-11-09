@@ -159,8 +159,8 @@ rule attributes:
         "benchmarks/attributes.bench"
     params:
         columns=config["columns"]
-    shell:
-        "python modules/attributes.py -an {input} -cn {params.columns}"
+    script:
+        "modules/attributes.py"
 
 
 rule vertices:
@@ -179,9 +179,8 @@ rule vertices:
         "benchmarks/add_attributes.bench"
     params:
         columns=config["columns"]
-    shell:
-        "python modules/add.py -v {input.vertices} -o {output} -a {input.attrib}"
-        " -cn {params.columns}"
+    script:
+        "modules/add.py"
 
 
 rule network:

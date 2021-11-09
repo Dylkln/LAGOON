@@ -1,25 +1,5 @@
 import os
 import csv
-import argparse
-
-
-def arguments():
-    """
-    set arguments
-    """
-
-    parser = argparse.ArgumentParser()
-
-    # Optional Arguments
-    parser.add_argument("-an", dest="annotation_files",
-                        type=str, required=False, default=None, nargs="+",
-                        help="either a path to find annotation files or a file containing the "
-                             "list of all path to annotation files.")
-    parser.add_argument("-cn", "--columns", dest="columns",
-                        type=str, required=False, default=None, nargs="+",
-                        help="the columns names used in attributes")
-    return parser.parse_args()
-
 
 def adapt_row(row, columns):
     n = row[columns[0]]
@@ -87,9 +67,10 @@ def save_attributes(at_dict, columns):
 
 
 def main():
-    args = arguments()
-    at_dict = create_attributes_dict(args.annotation_files, args.columns)
-    save_attributes(at_dict, args.columns)
+    columns = snakemake.params.columns
+    files = snakemake.input
+    at_dict = create_attributes_dict(files, columns)
+    save_attributes(at_dict, columns)
 
 
 if __name__ == '__main__':
