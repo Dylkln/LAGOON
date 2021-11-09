@@ -1,14 +1,72 @@
-fasta: "tr_files_test/*"
-annotation: "an_files_test/*"
+# ===== PREPROCESSING ===== #
+
+# Either a file containing all paths to fasta format file(s), or path(s) to fasta format file(s).
+# if several files are provided the program will concatenate all the files first.
+fasta: tr_files_test/*
+
+
+# If you already have some files that you created before, and you wish them to be processed by the workflow,
+# you can put their names in the appropriate place in this config file.
+
+# The name of the file containing all sequences you need to treat. By default, this file will be named "all_data.fasta".
+concat_file: all_data.fasta
+
+# The name of the diamond database format created by the command "makedb" of diamond-aligner software.
+# By default, this file will be named "all_data_db.dmnd".
+diamond_database: all_data_db.dmnd
+
+# The name of the diamond blatp file created by the command "blastp" of diamond-aligner software.
+# By default, this file will be named "diamond_ssn"
+diamond_blatp: diamond_ssn
+
+
+
+
+# ===== ATTRIBUTES ===== #
+
+# File(s) containing the attributes associated to the sequences ID.
+annotation: an_files_test/*
+
+# Columns you want to keep in you sequence similarity network (please put them in the same order as in your file)
+# Example:
+
+# peptides | length | database | date
+# 1        | 100    | A        | 12-06-19
+# 2        | 105    | B        | 12-06-19
+
+# If you only want the first three columns as attributes for you sequence similarity network,
+# the section "columns" of the config file should be like this :
+# columns:
+#   - peptides
+#   - length
+#   - database
+
 columns:
   - peptides
   - length
   - database
+
+# ===== FILTRATION ===== #
+
+# Put the filtration parameter you want to use to filter the blatp.
+# note that the filtration will always be >= of the value you put on this parameter.
+
 filtration:
   overlap:
     - 80
   identity:
     - 80
     - 85
+
+# ===== NETWORK CREATION ===== #
+
+# If you want to extract informations of a preformed network saved,
+# type the path of the file containing the graph, else, leave blank
+network_file:
+
+# The number of minimum neighbours you want in your connected components of the sequence similarity network
 neighbours: 3
-isolated: "yes"
+
+# If you want to keep ISOLATED nodes, insert "yes", else leave blank.
+isolated: yes
+

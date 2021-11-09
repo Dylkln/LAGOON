@@ -200,20 +200,15 @@ def get_data_from_cc(g_cc, columns):
                 d[cc_n][j] = get_percent(get_db(f))
             d[cc_n][j] = get_percent(cc.vs[j])
 
-    for k, v in d.items():
-        print(k, v)
-        break
-
     return d
 
-
-def save_data_dict(d, output, columns):
-    with open(output, "w") as f:
-        c = ";".join(columns)
-        f.write(f"cc;{c}\n")
+def save_data_dict(d, columns, cov, ident):
+    for c in columns:
+        f = open(f"results/pcov{cov}_pident{ident}_ssn_{c}_results", "w")
         for k, v in d.items():
-            for k2, v2 in v.items():
-                pass
+            for k2, v2 in v[c].items():
+                f.write(f"{k}\t{k2}\t{v2}\n")
+
 
 
 def get_data_from_cc_dicts(tr, db_sp, fn_p):
@@ -586,6 +581,7 @@ def main():
 
     # get arguments
     args = arguments()
+
     if not args.similarity_network:
 
         # get number of files
@@ -594,10 +590,10 @@ def main():
         for i in range(l_e):
 
             # get coverage percentage
-            cov = args.edges_file[i].split("_")[2]
+            cov = args.edges_file[i].split("_")[2].strip("pcov")
 
             # get identity percentage
-            ident = args.edges_file[i].split("_")[3].split(".")[0]
+            ident = args.edges_file[i].split("_")[3].split(".")[0].strip("pident")
 
             # creates pandas dataframe of edges and nodes
             edges = pd.read_csv(args.edges_file[i], sep=";")
@@ -622,7 +618,7 @@ def main():
     #        nb_of_subgraph = len(g_cc)
 
             # get a dictionary containing all data from CC
-            d = get_data_from_cc(g_cc, args.columns)
+            save_data_dict(get_data_from_cc(g_cc, args.columns), args.columns, cov, ident)
 
             # get trophy count, unique trophy, homogeneity and entropy
             tr_c, u_tr, hi, f_en = get_data_from_cc_dicts(tr, db_sp, fn_p)
