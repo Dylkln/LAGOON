@@ -1,49 +1,70 @@
+import glob
+
+
 configfile: "config/config.yml"
 
-
 def get_files(config):
-    import glob
     return glob.glob(config)
 
-
 def get_an_files(config):
-    import glob
     files = glob.glob(config)
     return [i.split("-")[1] for i in files]
 
+# ================= GET CONFIG / GET OUTPUTS ================= #
+
+FASTA = get_files(config["fasta"])
+CAT_F = config["concat_file"]
+DDB = config["diamond_database"]
+DBT = config["diamond_blastp"]
+AN_F = get_an_files(config["annotation"])
+ATBT = config["attributes"]
+COL = config["columns"]
+NET_F = config["network_file"]
+
+FILTR = expand("results/diamond_ssn_pcov{overlap}_pident{identity}",
+                overlap=config["filtration"]["overlap"],
+                identity=config["filtration"]["identity"])
+FILTR_S = expand("results/diamond_ssn_pcov{overlap}_pident{identity}_stats",
+                overlap=config["filtration"]["overlap"],
+                identity=config["filtration"]["identity"])
+EDGES = expand("results/diamond_ssn_pcov{overlap}_pident{identity}.edges",
+                overlap=config["filtration"]["overlap"],
+                identity=config["filtration"]["identity"])
+VERTI = expand("results/diamond_ssn_pcov{overlap}_pident{identity}.vertices",
+                overlap=config["filtration"]["overlap"],
+                identity=config["filtration"]["identity"])
+ATTRIB = expand("results/attributes/{files}.attributes", files=FASTA)
+
+VER_ATTRIB = expand("results/diamond_ssn_pcov{overlap}_pident{identity}_with_attributes.vertices",
+                overlap=config["filtration"]["overlap"],
+                identity=config["filtration"]["identity"])
+
+COL_RESLTS = expand("results/pcov{overlap}_pident{identity}_ssn_{col}_results",
+                overlap=config["filtration"]["overlap"],
+                identity=config["filtration"]["identity"],
+                col=COL)
+# ============================================== #
 
 rule all:
     input:
-        "results/all_data.fasta",
-        "results/all_data_db.dmnd",
-        "results/diamond_ssn",
-        expand("results/diamond_ssn_pcov{overlap}_pident{identity}",
-                overlap=config["filtration"]["overlap"],
-                identity=config["filtration"]["identity"]),
-        expand("results/diamond_ssn_pcov{overlap}_pident{identity}_stats",
-                overlap=config["filtration"]["overlap"],
-                identity=config["filtration"]["identity"]),
-        expand("results/diamond_ssn_pcov{overlap}_pident{identity}.edges",
-                overlap=config["filtration"]["overlap"],
-                identity=config["filtration"]["identity"]),
-        expand("results/diamond_ssn_pcov{overlap}_pident{identity}.vertices",
-                overlap=config["filtration"]["overlap"],
-                identity=config["filtration"]["identity"]),
-        expand("results/attributes/{files}.attributes", files=get_an_files(config["annotation"])),
-        expand("results/diamond_ssn_pcov{overlap}_pident{identity}_with_attributes.vertices",
-                overlap=config["filtration"]["overlap"],
-                identity=config["filtration"]["identity"]),
-        expand("results/pcov{overlap}_pident{identity}_ssn_{col}_results",
-                overlap=config["filtration"]["overlap"],
-                identity=config["filtration"]["identity"],
-                col=config["columns"])
+        CAT_F,
+        DDB,
+        DBT,
+        FILTR,
+        FILTR_S,
+        EDGES,
+        VERTI,
+        ATTRIB,
+        VER_ATTRIB,
+        COL_RESLTS
 
-if config["fasta"]:
+
+if FASTA:
     rule cat:
         input:
-            get_files(config["fasta"])
+            FASTA
         output:
-            "results/all_data.fasta"
+            CAT_F
         log:
             "logs/cat.log"
         benchmark:
@@ -54,9 +75,9 @@ if config["fasta"]:
 
     rule diamond_db:
         input:
-            "results/all_data.fasta"
+            CAT_F
         output:
-            "results/all_data_db.dmnd"
+            DDB
         log:
             "logs/diamond_db.log"
         benchmark:
@@ -64,7 +85,6 @@ if config["fasta"]:
         run:
             import subprocess
             from subprocess import DEVNULL
-            import os
             try:
                 command = ["diamond-aligner", "makedb", "--in", str(input), "--db", str(output)]
                 subprocess.call(command,stdout=DEVNULL)
@@ -76,10 +96,10 @@ if config["fasta"]:
 
     rule diamond_blastp:
         input:
-            db="results/all_data_db.dmnd",
-            fasta="results/all_data.fasta"
+            db=DDB,
+            fasta=FASTA
         output:
-            "results/diamond_ssn"
+            DBT
         log:
             "logs/diamond_blatp.log"
         benchmark:
@@ -105,62 +125,60 @@ if config["fasta"]:
 
 rule filter:
     input:
-        "results/diamond_ssn"
+        DBT
     params:
         overlap=config["filtration"]["overlap"],
         identity=config["filtration"]["identity"]
     output:
-        expand("results/diamond_ssn_pcov{overlap}_pident{identity}",
-                overlap=config["filtration"]["overlap"],
-                identity=config["filtration"]["identity"]),
-        expand("results/diamond_ssn_pcov{overlap}_pident{identity}_stats",
-                overlap=config["filtration"]["overlap"],
-                identity=config["filtration"]["identity"])
+        FILTR,
+        FILTR_S
     log:
         "logs/filter.log"
     benchmark:
         "benchmarks/filter.bench"
-    shell:
-        "python modules/filter.py -f {input} -ov {params.overlap} -id {params.identity}"
-
-
-rule diamond2graph:
-    input:
-        expand("results/diamond_ssn_pcov{overlap}_pident{identity}",
-                overlap=config["filtration"]["overlap"],
-                identity=config["filtration"]["identity"])
-    output:
-        expand("results/diamond_ssn_pcov{overlap}_pident{identity}.edges",
-                overlap=config["filtration"]["overlap"],
-                identity=config["filtration"]["identity"]),
-        expand("results/diamond_ssn_pcov{overlap}_pident{identity}.vertices",
-                overlap=config["filtration"]["overlap"],
-                identity=config["filtration"]["identity"])
-    log:
-        "logs/diamond2graph.log"
-    benchmark:
-        "benchmarks/diamond2graph.bench"
-    run:
-        import subprocess
-        from subprocess import DEVNULL
-        for file in input:
-            command = ["perl", "modules/diamond2graph.pl", "--input", file]
-            subprocess.call(command, stdout=DEVNULL)
-
-
-rule attributes:
-    input:
-        get_files(config["annotation"])
-    output:
-        expand("results/attributes/{sample}.attributes", sample=get_an_files(config["annotation"]))
-    log:
-        "logs/attributes.log"
-    benchmark:
-        "benchmarks/attributes.bench"
-    params:
-        columns=config["columns"]
     script:
-        "modules/attributes.py"
+        "modules/filter.py"
+
+
+if config["conversion"] == "yes":
+    rule diamond2graph:
+        input:
+            expand("results/diamond_ssn_pcov{overlap}_pident{identity}",
+                    overlap=config["filtration"]["overlap"],
+                    identity=config["filtration"]["identity"])
+        output:
+            expand("results/diamond_ssn_pcov{overlap}_pident{identity}.edges",
+                    overlap=config["filtration"]["overlap"],
+                    identity=config["filtration"]["identity"]),
+            expand("results/diamond_ssn_pcov{overlap}_pident{identity}.vertices",
+                    overlap=config["filtration"]["overlap"],
+                    identity=config["filtration"]["identity"])
+        log:
+            "logs/diamond2graph.log"
+        benchmark:
+            "benchmarks/diamond2graph.bench"
+        run:
+            import subprocess
+            from subprocess import DEVNULL
+            for file in input:
+                command = ["perl", "modules/diamond2graph.pl", "--input", file]
+                subprocess.call(command, stdout=DEVNULL)
+
+
+if not config["attributes"]:
+    rule attributes:
+        input:
+            get_files(config["annotation"])
+        output:
+            expand("results/attributes/{sample}.attributes", sample=get_an_files(config["annotation"]))
+        log:
+            "logs/attributes.log"
+        benchmark:
+            "benchmarks/attributes.bench"
+        params:
+            columns=config["columns"]
+        script:
+            "modules/attributes.py"
 
 
 rule vertices:
@@ -203,7 +221,9 @@ rule network:
     params:
         neighbours=config["neighbours"],
         columns=config["columns"],
-        isolated=config["isolated"]
-    shell:
-        "python modules/network.py -e {input.edges} -v {input.vertices} -cn {params.columns}"
-        " -n {params.neighbours} -i {params.isolated}"
+        isolated=config["isolated"],
+        similarity=config["network_file"],
+        overlap=config["filtration"]["overlap"],
+        identity=config["filtration"]["identity"]
+    script:
+        "modules/network.py"

@@ -1,38 +1,7 @@
 import igraph as ig
-import argparse
 import pandas as pd
 import math
 import os
-
-
-def arguments():
-    """
-    set arguments
-    """
-
-    parser = argparse.ArgumentParser()
-
-    # Mandatory arguments
-    parser.add_argument("-e", "--edges_file", dest="edges_file",
-                        type=str, required=True, nargs="+",
-                        help="")
-    parser.add_argument("-v", "--vertices_file", dest="vertices_file",
-                        type=str, required=True, nargs="+",
-                        help="")
-    parser.add_argument("-n", "--neighbours", dest="neighbours",
-                        type=int, required=False, default=3,
-                        help="")
-    parser.add_argument("-sn", "--similarity_network", dest="similarity_network",
-                        type=str, required=False,
-                        help="")
-    parser.add_argument("-i", "--isolated", dest="isolated",
-                        type=str, required=False, default="No",
-                        help="")
-    parser.add_argument("-cn", "--columns", dest="columns",
-                        type=str, required=False, default=None, nargs="+",
-                        help="the columns names used in attributes")
-
-    return parser.parse_args()
 
 
 def percentage(part, whole):
@@ -172,7 +141,7 @@ def get_count(l):
     return c
 
 
-def get_data_from_cc(g_cc, columns):
+def get_data_from_cc(g_cc, columns, out_files):
     """
     Retrives all wanted data from a connected component (CC)
 
@@ -199,15 +168,26 @@ def get_data_from_cc(g_cc, columns):
                 f = get_db_id(cc.vs[j])
                 d[cc_n][j] = get_percent(get_db(f))
             d[cc_n][j] = get_percent(cc.vs[j])
+    save_data_dict(d, columns, out_files)
 
-    return d
 
-def save_data_dict(d, columns, cov, ident):
+def find_output(c, outputs):
+    for out in outputs:
+        if c in out:
+            return out
+
+
+def save_data_dict(d, columns, outputs):
     for c in columns:
-        f = open(f"results/pcov{cov}_pident{ident}_ssn_{c}_results", "w")
+        o = find_output(c, outputs)
+        tmp = []
         for k, v in d.items():
             for k2, v2 in v[c].items():
-                f.write(f"{k}\t{k2}\t{v2}\n")
+                tmp.append([str(k), str(k2), str(v2)])
+        with open(o, "w") as f:
+            print(f"CC\t{c}\tPercentage", file=f)
+            for i in tmp:
+                print("\t".join(i), file=f)
 
 
 
@@ -574,104 +554,72 @@ def transform_list(l):
     return lt
 
 
+def find_io(overlap, identity, edges, vertices, outputs):
+    in_files = []
+    length = len(edges)
+
+    for i in range(length):
+        if f"pcov{overlap}" in edges[i] and f"pident{identity}" in edges[i]:
+            in_files.append(edges[i])
+        if f"pcov{overlap}" in vertices[i] and f"pident{identity}" in vertices[i]:
+            in_files.append(vertices[i])
+
+    out_files = []
+    for f in outputs:
+        if f"pcov{overlap}" in f and f"pident{identity}" in f:
+            out_files.append(f)
+
+    return in_files, out_files
+
+
 def main():
     """
     Main program function
     """
 
-    # get arguments
-    args = arguments()
+    in_edges = snakemake.input.edges
+    in_vertices = snakemake.input.vertices
+    outputs = snakemake.output
+    overlap = snakemake.params.overlap
+    identity = snakemake.params.identity
+    neighbours = snakemake.params.neighbours
+    columns = snakemake.params.columns
+    similarity = snakemake.params.similarity
+    isolated = snakemake.params.isolated
 
-    if not args.similarity_network:
+    if similarity:
+        pass
 
-        # get number of files
-        l_e = len(args.edges_file)
+    else:
 
-        for i in range(l_e):
+        for ov in overlap:
+            for id in identity:
+                in_files, out_files = find_io(ov, id, in_edges, in_vertices, outputs)
 
-            # get coverage percentage
-            cov = args.edges_file[i].split("_")[2].strip("pcov")
+                # creates pandas dataframe of edges and nodes
+                edges = pd.read_csv(in_files[0], sep=";")
+                nodes = pd.read_csv(in_files[1], sep=";", low_memory=False)
 
-            # get identity percentage
-            ident = args.edges_file[i].split("_")[3].split(".")[0].strip("pident")
+                # create an igraph Graph
+                g = ig.Graph.DataFrame(edges, directed=False)
 
-            # creates pandas dataframe of edges and nodes
-            edges = pd.read_csv(args.edges_file[i], sep=";")
-            nodes = pd.read_csv(args.vertices_file[i], sep=";", low_memory=False)
-
-            # create an igraph Graph
-            g = ig.Graph.DataFrame(edges, directed=False)
-
-            # remove isolated nodes
-            if args.isolated == "yes":
-                to_del = [v.index for v in g.vs if v.degree() == 0]
-                g.delete_vertices(to_del)
+                # remove isolated nodes
+                if isolated == "yes":
+                    to_del = [v.index for v in g.vs if v.degree() == 0]
+                    g.delete_vertices(to_del)
 
 
-            for index, i in enumerate(args.columns):
-                t = [j for j in nodes["name"]] if index == 0 else [j for j in nodes[i]]
-                g.vs[i] = t
-            # decompose graph into subgraph
-            g_cc = g.decompose(minelements=args.neighbours)
+                for index, i in enumerate(columns):
+                    t = [j for j in nodes["name"]] if index == 0 else [j for j in nodes[i]]
+                    g.vs[i] = t
+                # decompose graph into subgraph
+                g_cc = g.decompose(minelements=neighbours)
 
-            # get number of connected components
-    #        nb_of_subgraph = len(g_cc)
+                # get number of connected components
+        #        nb_of_subgraph = len(g_cc)
 
-            # get a dictionary containing all data from CC
-            save_data_dict(get_data_from_cc(g_cc, args.columns), args.columns, cov, ident)
-
-            # get trophy count, unique trophy, homogeneity and entropy
-            tr_c, u_tr, hi, f_en = get_data_from_cc_dicts(tr, db_sp, fn_p)
-
-            # get the number of IDs contained in each connected component
-            cl = get_cc_len(fn)
-
-            # get abundance distribution
-            ab_d = get_abund_distrib(ab)
-
-            # check path
-            p = f"../results/{cov}_{ident}"
-
-            if not os.path.exists(p):
-                os.mkdir(p)
-
-            # save all values extracted from the graph
-            output = f"../results/{cov}_{ident}/abund_matrix_{cov}_{ident}.tsv"
-            save_dict_of_dict(ab, output)
-
-            output = f"../results/{cov}_{ident}/abund_matrix_distrib_{cov}_{ident}.tsv"
-            save_dict(ab_d, output)
-
-            output = f"../results/{cov}_{ident}/function_percentage_{cov}_{ident}.tsv"
-            save_dict_of_dict(fn_p, output)
-
-            output = f"../results/{cov}_{ident}/phylum_percentage_{cov}_{ident}.tsv"
-            save_dict_of_dict(tp_p, output)
-
-            output = f"../results/{cov}_{ident}/genus_percentage_{cov}_{ident}.tsv"
-            save_dict_of_dict(tg_p, output)
-
-            output = f"../results/{cov}_{ident}/trophy_percentage_{cov}_{ident}.tsv"
-            save_dict_of_dict(tr_p, output)
-
-            output = f"../results/{cov}_{ident}/cc_nb_{cov}_{ident}.txt"
-            save_dict(cl, output)
-
-            output = f"../results/{cov}_{ident}/trophy_count_{cov}_{ident}.tsv"
-            save_dict_of_dict(tr_c, output)
-
-            output = f"../results/{cov}_{ident}/unique_trophy_{cov}_{ident}.tsv"
-            save_dict(u_tr, output)
-
-            output = f"../results/{cov}_{ident}/homogeneity_index_{cov}_{ident}.tsv"
-            save_dict_of_dict(hi, output)
-
-            #        output = f"../results/{cov}_{ident}/entropy_by_function_{cov}_{ident}.tsv"
-            #        save_dict_with_cc(f_en, output)
-
-            # save the graph into a graphml format
-            g.write(f=f"../results/{cov}_{ident}/graph_ssn_{cov}_{ident}", format="graphml")
-
+                # get a dictionary containing all data from CC
+                get_data_from_cc(g_cc, columns, out_files)
 
 if __name__ == '__main__':
     main()

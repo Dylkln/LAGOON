@@ -1,27 +1,6 @@
-import argparse
 import csv
 import io
 import gzip
-
-
-def arguments():
-    """
-    set arguments
-    """
-
-    parser = argparse.ArgumentParser()
-
-    # Optional Arguments
-    parser.add_argument("-f", "--file", dest="file",
-                        type=str, required=False, default=None,
-                        help="the ssn file")
-    parser.add_argument("-ov", "--overlap", dest="overlap",
-                        type=float, required=False, default=None, nargs="+",
-                        help="the filtration wanted of a diamond output")
-    parser.add_argument("-id", "--identity", dest="identity",
-                        type=float, required=False, default=None, nargs="+",
-                        help="the filtration wanted of a diamond output")
-    return parser.parse_args()
 
 
 def percentage(part, whole):
@@ -134,11 +113,10 @@ def save_stats(output, al_ssn, al_filt, nb_nssn, nb_nfilt):
 
 
 def main():
-    args = arguments()
     print("filtering informations provided")
-    filter_file(args.identity,
-                args.overlap,
-                args.file)
+    filter_file(snakemake.params.identity,
+                snakemake.params.overlap,
+                str(snakemake.input))
 
 
 if __name__ == '__main__':
