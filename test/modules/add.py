@@ -3,6 +3,8 @@
 import argparse
 import re
 import csv
+import time
+
 
 # =============================================================================#
 
@@ -46,11 +48,10 @@ def read_csv(file):
     """
 
     with open(file, "r") as f_in:
-        dialect = csv.Sniffer().sniff(f_in.readline(), delimiters=",;")
-        f_in.seek(0)
-        reader = csv.DictReader(f_in, dialect=dialect)
-        for row in reader:
-            yield row
+        col = f_in.readline()
+        next(f_in)
+        for line in f_in:
+            yield col, line.strip()
 
 
 def get_files_from_argument(file):
@@ -172,60 +173,57 @@ def find_output(file, outputs):
 
 
 def main():
+    with open(str(snakemake.log), "w") as log:
+        s = time.time()
+        log.write("*** Getting input files and parameters ***\n")
+        fieldnames = ["name", "prefix"] + snakemake.params.columns[1:]
+        i_dict = {}
+        with open(snakemake.input.indices, "r") as f:
+            for line in f:
+                llist = line.split("\t")[:2]
+                i_dict[llist[0]] = llist[1]
 
-    fieldnames = ["name", "prefix"] + snakemake.params.columns[1:]
-    files = snakemake.input.attrib
+        log.write("*** Adding Attributes to the output file ***\n")
+        for file in snakemake.input.vertices:
+            out = find_output(file, snakemake.output)
+            f_out = open(out, "w")
+            writer = csv.DictWriter(f_out, delimiter=";", fieldnames=fieldnames)
+            writer.writeheader()
+            name_set = set()
 
-    for file in snakemake.input.vertices:
-        out = find_output(file, snakemake.output)
-        f_out = open(out, "w")
-        writer = csv.DictWriter(f_out, delimiter=";", fieldnames=fieldnames)
-        writer.writeheader()
-        name_set = set([])
+            for col, line in read_csv(file):
+                if line not in name_set:
+                    name_set.add(int(line))
 
-        for row in read_csv(file):
-            if row["name"] not in name_set:
-                name_set.add(row["name"])
+            ns = sorted(name_set)
+            i = len(ns) + 1
 
-        ns = sorted(name_set)
-        i = len(ns)
+            for n in enumerate(ns):
 
-        for index, n in enumerate(ns):
+                if n == 1:
 
-            if index == 0:
+                    nset = {n}
+                    previous_n = n
 
-                nset = {n}
-                previous_n = "-".join(n.split("-")[0:2])
+                elif n + 1 <= i:
 
-            elif index + 1 <= i:
+                    if previous_n != n:
+                        fn = get_fname(i_dict[n], snakemake.input.attrib)
 
-                if previous_n == "-".join(n.split("-")[0:2]):
-                    nset.add(n)
+                        if fn:
+                            rows = get_rows(nset, fn, snakemake.params.columns)
+                            write_rows(writer, rows)
+                        nset = {n}
+                        previous_n = n
 
-                else:
-                    nset = sorted(nset)
-                    fn = get_fname(nset[0], files)
+                elif n + 1 >= i:
 
+                    fn = get_fname(i_dict[n], snakemake.input.attrib)
                     if fn:
                         rows = get_rows(nset, fn, snakemake.params.columns)
                         write_rows(writer, rows)
-                    nset = {n}
-                    previous_n = "-".join(n.split("-")[0:2])
-
-            elif index + 1 >= i:
-
-                if previous_n == "-".join(n.split("-")[0:2]):
-
-                    nset.add(n)
-                    nset = sorted(nset)
-                else:
-
-                    nset = {n}
-                fn = get_fname(nset[0], files)
-
-                if fn:
-                    rows = get_rows(nset, fn, snakemake.params.columns)
-                    write_rows(writer, rows)
+        e = time.time()
+        log.write(f"Operations done in {round(e - s, 2)} seconds")
 
 
 if __name__ == '__main__':

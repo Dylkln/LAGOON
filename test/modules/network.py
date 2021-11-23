@@ -1,7 +1,7 @@
+import math
+
 import igraph as ig
 import pandas as pd
-import math
-import os
 
 
 def percentage(part, whole):
@@ -564,10 +564,11 @@ def find_io(overlap, identity, edges, vertices, outputs):
         if f"pcov{overlap}" in vertices[i] and f"pident{identity}" in vertices[i]:
             in_files.append(vertices[i])
 
-    out_files = []
-    for f in outputs:
-        if f"pcov{overlap}" in f and f"pident{identity}" in f:
-            out_files.append(f)
+    out_files = [
+        f
+        for f in outputs
+        if f"pcov{overlap}" in f and f"pident{identity}" in f
+    ]
 
     return in_files, out_files
 
@@ -577,20 +578,17 @@ def main():
     Main program function
     """
 
-    in_edges = snakemake.input.edges
-    in_vertices = snakemake.input.vertices
-    outputs = snakemake.output
-    overlap = snakemake.params.overlap
-    identity = snakemake.params.identity
-    neighbours = snakemake.params.neighbours
-    columns = snakemake.params.columns
     similarity = snakemake.params.similarity
-    isolated = snakemake.params.isolated
+    if not similarity:
 
-    if similarity:
-        pass
-
-    else:
+        in_edges = snakemake.input.edges
+        in_vertices = snakemake.input.vertices
+        outputs = snakemake.output
+        overlap = snakemake.params.overlap
+        identity = snakemake.params.identity
+        neighbours = snakemake.params.neighbours
+        columns = snakemake.params.columns
+        isolated = snakemake.params.isolated
 
         for ov in overlap:
             for id in identity:
@@ -611,6 +609,7 @@ def main():
 
                 for index, i in enumerate(columns):
                     t = [j for j in nodes["name"]] if index == 0 else [j for j in nodes[i]]
+                    print(t)
                     g.vs[i] = t
                 # decompose graph into subgraph
                 g_cc = g.decompose(minelements=neighbours)
