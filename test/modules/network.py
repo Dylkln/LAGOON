@@ -609,7 +609,6 @@ def main():
 
                 for index, i in enumerate(columns):
                     t = [j for j in nodes["name"]] if index == 0 else [j for j in nodes[i]]
-                    print(t)
                     g.vs[i] = t
                 # decompose graph into subgraph
                 g_cc = g.decompose(minelements=neighbours)

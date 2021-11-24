@@ -32,7 +32,7 @@ def arguments():
     return parser.parse_args()
 
 
-def read_csv(file):
+def read_file(file):
     """
     Reads a CSV file with a comma delimiter
 
@@ -52,6 +52,14 @@ def read_csv(file):
         next(f_in)
         for line in f_in:
             yield col, line.strip()
+
+
+def read_csv(file):
+    with open(file, "r") as f_in:
+        dialect = csv.Sniffer().sniff(f_in.readline())
+        f_in.seek(0)
+        reader = csv.DictReader(f_in, dialect=dialect)
+        yield from reader
 
 
 def get_files_from_argument(file):
@@ -77,7 +85,7 @@ def get_files_from_argument(file):
     return files
 
 
-def get_fname(n, files):
+def get_fname(names, files, i_dict):
     """
     Retrieves the file name containing the attributes of an ORF ID
 
@@ -92,11 +100,17 @@ def get_fname(n, files):
 
         file : the file containing the attributes of the ORF ID
     """
+    fn_dict = {}
+    for n in names:
+        iname = i_dict[str(n)]
+        for file in files:
+            if file not in fn_dict:
+                fn_dict[file] = []
+            i = "_".join(iname.split("-")[0:2])
+            if re.search(i, file):
+                fn_dict[file].append(n)
 
-    for file in files:
-        i = "_".join(n.split("-")[0:2])
-        if re.search(i, file):
-            return file
+    return fn_dict
 
 
 def get_prefix(n):
@@ -121,7 +135,7 @@ def get_prefix(n):
     return "-".join(pr)
 
 
-def get_rows(nset, file, columns):
+def get_rows(indices, file, columns):
     """
     Retrieves a list of rows containing the ORF name, prefix and attributes
 
@@ -141,9 +155,8 @@ def get_rows(nset, file, columns):
     rlist = []
 
     for row in read_csv(file):
-        if row[columns[0]] in nset:
+        if int(row[columns[0]]) in indices:
             row["name"] = row[columns[0]]
-            row["prefix"] = get_prefix(row[columns[0]])
             row.pop(columns[0])
             rlist.append(row)
 
@@ -176,7 +189,7 @@ def main():
     with open(str(snakemake.log), "w") as log:
         s = time.time()
         log.write("*** Getting input files and parameters ***\n")
-        fieldnames = ["name", "prefix"] + snakemake.params.columns[1:]
+        fieldnames = ["name"] + snakemake.params.columns[1:]
         i_dict = {}
         with open(snakemake.input.indices, "r") as f:
             for line in f:
@@ -191,37 +204,16 @@ def main():
             writer.writeheader()
             name_set = set()
 
-            for col, line in read_csv(file):
+            for col, line in read_file(file):
                 if line not in name_set:
                     name_set.add(int(line))
 
-            ns = sorted(name_set)
-            i = len(ns) + 1
+            fn_dict = get_fname(name_set, snakemake.input.attrib, i_dict)
 
-            for n in enumerate(ns):
+            for k, v in fn_dict.items():
+                rows = get_rows(v, k, snakemake.params.columns)
+                write_rows(writer, rows)
 
-                if n == 1:
-
-                    nset = {n}
-                    previous_n = n
-
-                elif n + 1 <= i:
-
-                    if previous_n != n:
-                        fn = get_fname(i_dict[n], snakemake.input.attrib)
-
-                        if fn:
-                            rows = get_rows(nset, fn, snakemake.params.columns)
-                            write_rows(writer, rows)
-                        nset = {n}
-                        previous_n = n
-
-                elif n + 1 >= i:
-
-                    fn = get_fname(i_dict[n], snakemake.input.attrib)
-                    if fn:
-                        rows = get_rows(nset, fn, snakemake.params.columns)
-                        write_rows(writer, rows)
         e = time.time()
         log.write(f"Operations done in {round(e - s, 2)} seconds")
 
