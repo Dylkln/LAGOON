@@ -105,10 +105,10 @@ def get_fname(names, files, i_dict):
         iname = i_dict[str(n)]
         for file in files:
             if file not in fn_dict:
-                fn_dict[file] = []
+                fn_dict[file] = set()
             i = "_".join(iname.split("-")[0:2])
             if re.search(i, file):
-                fn_dict[file].append(n)
+                fn_dict[file].add(n)
 
     return fn_dict
 
