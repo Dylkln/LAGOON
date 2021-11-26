@@ -3,18 +3,36 @@ import time
 from Bio import SeqIO
 
 
+def determine_file(file):
+    if type(file) != str:
+        file = str(file)
+    with open(file) as f:
+        line = f.readline()
+        return bool(os.path.exists(line.strip()))
+
+
+def get_files_from_arg(file):
+    if type(file) != str:
+        file = str(file)
+    files = []
+    with open(file, "r") as f_in:
+        for line in f_in:
+            files.append(line.strip())
+
+    return files
+
+
 def detect_files(files):
 
-    fs = []
+    fs = None
     for file in files:
-        with open(file, "r") as f:
-            if os.path.exists(f.readline()):
-                for line in f:
-                    fs.append(line.strip())
+        if determine_file(file):
+            fs = get_files_from_arg(file)
 
     if fs:
         return fs
-    return files
+    else:
+        return files
 
 
 def read_fasta_files(files, output):

@@ -8,6 +8,12 @@ def get_files(config):
 
 def get_an_files(config):
     files = glob.glob(config)
+    if len(files) == 1:
+        f = []
+        with open(files[0], "r") as fin:
+            for line in fin:
+                f.append(line.strip())
+        return [i.split("-")[1] for i in f]
     return [i.split("-")[1] for i in files]
 
 # ==================================== GET CONFIG / GET FILES ==================================== #
@@ -53,6 +59,7 @@ COL_RESLTS = expand("results/pcov{overlap}_pident{identity}_ssn_{col}_results",
                 overlap=config["filtration"]["overlap"],
                 identity=config["filtration"]["identity"],
                 col=COL)
+
 
 # ================================================================================================ #
 
@@ -182,6 +189,7 @@ rule attributes:
             columns=COL
         script:
             "modules/attributes.py"
+
 
 if not config["attributes"]:
     rule vertices:

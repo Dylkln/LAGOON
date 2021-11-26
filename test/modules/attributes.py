@@ -16,12 +16,17 @@ def adapt_row(row, columns, i_dict):
 
 
 def determine_file(file):
+    if type(file) != str:
+        file = str(file)
     with open(file) as f:
         line = f.readline()
+        print(bool(os.path.exists(line.strip())))
         return bool(os.path.exists(line.strip()))
 
 
 def get_files_from_arg(file):
+    if type(file) != str:
+        file = str(file)
     files = []
     with open(file, "r") as f_in:
         for line in f_in:
@@ -33,6 +38,7 @@ def get_files_from_arg(file):
 def treat_annotation(an_files, columns, indices):
     at_dict = {}
     i_dict = {}
+
 
     with open(indices, "r") as f:
         for line in f:
@@ -54,7 +60,7 @@ def treat_annotation(an_files, columns, indices):
 
 
 def create_attributes_dict(an_files, columns, indices):
-    if len(an_files) != 1 or determine_file(an_files):
+    if len(an_files) != 1 or not determine_file(an_files):
         return treat_annotation(an_files, columns, indices)
     files = get_files_from_arg(an_files)
     return treat_annotation(files, columns, indices)
