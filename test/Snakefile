@@ -1,12 +1,11 @@
 import glob
-import os
 
 configfile: "config/config.yml"
 
 def get_files(config):
     return glob.glob(config)
 
-def get_an_files(config):
+def get_attrib_files(config):
     files = glob.glob(config)
     if len(files) == 1:
         f = []
@@ -34,30 +33,31 @@ ISOL = config["isolated"]
 IDX = f"index/{config['indices']}"
 
 FILTR = expand("results/diamond_ssn_pcov{overlap}_pident{identity}",
-                overlap=config["filtration"]["overlap"],
-                identity=config["filtration"]["identity"])
+                overlap=PCOV,
+                identity=PIDENT)
 FILTR_S = expand("results/diamond_ssn_pcov{overlap}_pident{identity}_stats",
-                overlap=config["filtration"]["overlap"],
-                identity=config["filtration"]["identity"])
+                  overlap=PCOV,
+                  identity=PIDENT)
 EDGES = expand("results/diamond_ssn_pcov{overlap}_pident{identity}.edges",
-                overlap=config["filtration"]["overlap"],
-                identity=config["filtration"]["identity"])
+                overlap=PCOV,
+                identity=PIDENT)
 VERTI = expand("results/diamond_ssn_pcov{overlap}_pident{identity}.vertices",
-                overlap=config["filtration"]["overlap"],
-                identity=config["filtration"]["identity"])
+                overlap=PCOV,
+                identity=PIDENT)
 
 if not config["attributes"]:
-    ATTRIB = expand("results/attributes/{files}.attributes", files=get_an_files(config["annotation"]))
+    ATTRIB = expand("results/attributes/{files}.attributes",
+                     files=get_attrib_files(config["annotation"]))
 else:
     ATTRIB = config["attributes"]
 
 VER_ATTRIB = expand("results/diamond_ssn_pcov{overlap}_pident{identity}_with_attributes.vertices",
-                overlap=config["filtration"]["overlap"],
-                identity=config["filtration"]["identity"])
+                overlap=PCOV,
+                identity=PIDENT)
 
 COL_RESLTS = expand("results/pcov{overlap}_pident{identity}_ssn_{col}_results",
-                overlap=config["filtration"]["overlap"],
-                identity=config["filtration"]["identity"],
+                overlap=PCOV,
+                identity=PIDENT,
                 col=COL)
 
 
@@ -104,13 +104,14 @@ if FASTA:
         run:
             import subprocess
             from subprocess import DEVNULL
+
+            command_client = ["diamond-aligner", "makedb", "--in", str(input), "--db", str(output)]
+            command_cluster = ["diamond", "makedb", "--in", str(input), "--db", str(output)]
             try:
-                command = ["diamond-aligner", "makedb", "--in", str(input), "--db", str(output)]
-                subprocess.call(command,stdout=DEVNULL)
+                subprocess.call(command_client,stdout=DEVNULL)
 
             except:
-                command = ["diamond", "makedb", "--in", str(input), "--db", str(output)]
-                subprocess.call(command,stdout=DEVNULL)
+                subprocess.call(command_cluster,stdout=DEVNULL)
 
 
     rule diamond_blastp:
@@ -127,19 +128,20 @@ if FASTA:
             import subprocess
             from subprocess import DEVNULL
 
+            command_client = ["diamond-aligner", "blastp", "-d", str(input.db), "-q", str(input.fasta),
+                       "-o", str(output), "-e", "1e-5", "--sensitive", "-f", "6", "qseqid", "qlen",
+                       "qstart", "qend", "sseqid", "slen", "sstart", "send", "length", "pident",
+                       "ppos", "score", "evalue", "bitscore"]
+
+            command_cluster = ["diamond", "blastp", "-d", str(input.db), "-q", str(input.fasta), "-o",
+                       str(output), "-e", "1e-5", "--sensitive", "-f", "6", "qseqid", "qlen",
+                       "qstart", "qend", "sseqid", "slen", "sstart", "send", "length", "pident",
+                       "ppos", "score", "evalue", "bitscore"]
             try:
-                command = ["diamond-aligner", "blastp", "-d", str(input.db), "-q", str(input.fasta),
-                           "-o", str(output), "-e", "1e-5", "--sensitive", "-f", "6", "qseqid", "qlen",
-                           "qstart", "qend", "sseqid", "slen", "sstart", "send", "length", "pident",
-                           "ppos", "score", "evalue", "bitscore"]
-                subprocess.call(command,stdout=DEVNULL)
+                subprocess.call(command_client,stdout=DEVNULL)
 
             except:
-                command = ["diamond", "blastp", "-d", str(input.db), "-q", str(input.fasta), "-o",
-                           str(output), "-e", "1e-5", "--sensitive", "-f", "6", "qseqid", "qlen",
-                           "qstart", "qend", "sseqid", "slen", "sstart", "send", "length", "pident",
-                           "ppos", "score", "evalue", "bitscore"]
-                subprocess.call(command,stdout=DEVNULL)
+                subprocess.call(command_cluster,stdout=DEVNULL)
 
 
 rule filter:
@@ -212,7 +214,7 @@ if not config["attributes"]:
 rule network:
     input:
         edges=EDGES,
-        vertices=VER_ATTRIB,
+        vertices=VER_ATTRIB
     output:
         COL_RESLTS
     log:

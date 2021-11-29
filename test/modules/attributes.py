@@ -20,7 +20,6 @@ def determine_file(file):
         file = str(file)
     with open(file) as f:
         line = f.readline()
-        print(bool(os.path.exists(line.strip())))
         return bool(os.path.exists(line.strip()))
 
 
