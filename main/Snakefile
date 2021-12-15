@@ -1,0 +1,231 @@
+configfile: "config/config.yml"
+
+def get_files(config):
+    import glob
+    return glob.glob(config)
+
+def get_attrib_files(config):
+    import glob
+    files = glob.glob(config)
+    if len(files) == 1:
+        f = []
+        with open(files[0], "r") as fin:
+            for line in fin:
+                f.append(line.strip())
+        return ["_".join(i.split("/")[-1].split("-")[:2]) for i in f]
+    return ["_".join(i.split("/")[-1].split("-")[:2]) for i in files]
+
+# ==================================== GET CONFIG / GET FILES ==================================== #
+
+FASTA = get_files(config["fasta"])
+CAT_F = config["concat_file"]
+DDB = config["diamond_database"]
+DBT = config["diamond_blastp"]
+AN_F = get_files(config["annotation"])
+ATBT = config["attributes"]
+COL = config["columns"]
+NET_F = config["network_file"]
+NGB = config["neighbours"]
+PCOV = config["filtration"]["overlap"]
+PIDENT = config["filtration"]["identity"]
+EVAL = config["filtration"]["evalue"]
+ISOL = config["isolated"]
+IDX = f"index/{config['indices']}"
+
+FILTR = expand("results/diamond_ssn_pcov{overlap}_pident{identity}",
+                overlap=PCOV,
+                identity=PIDENT)
+FILTR_S = expand("results/diamond_ssn_pcov{overlap}_pident{identity}_stats",
+                  overlap=PCOV,
+                  identity=PIDENT)
+EDGES = expand("results/diamond_ssn_pcov{overlap}_pident{identity}.edges",
+                overlap=PCOV,
+                identity=PIDENT)
+VERTI = expand("results/diamond_ssn_pcov{overlap}_pident{identity}.vertices",
+                overlap=PCOV,
+                identity=PIDENT)
+
+if not config["attributes"]:
+    ATTRIB = expand("results/attributes/{files}.attributes", files=get_attrib_files(config["annotation"]))
+else:
+    ATTRIB = config["attributes"]
+
+VER_ATTRIB = expand("results/diamond_ssn_pcov{overlap}_pident{identity}_with_attributes.vertices",
+                overlap=PCOV,
+                identity=PIDENT)
+
+COL_RESLTS = expand("results/pcov{overlap}_pident{identity}_ssn_{col}_results",
+                overlap=PCOV,
+                identity=PIDENT,
+                col=COL)
+
+
+# ================================================================================================ #
+
+rule all:
+    input:
+        CAT_F,
+        DDB,
+        DBT,
+        IDX,
+        FILTR,
+        FILTR_S,
+        EDGES,
+        VERTI,
+        ATTRIB,
+        VER_ATTRIB,
+        COL_RESLTS
+
+
+if FASTA:
+    rule cat:
+        input:
+            FASTA
+        output:
+            CAT_F,
+            IDX
+        log:
+            "logs/cat.log"
+        benchmark:
+            "benchmarks/cat.bench"
+        script:
+            "modules/cat.py"
+
+    rule diamond_db:
+        input:
+            CAT_F
+        output:
+            DDB
+        log:
+            "logs/diamond_db.log"
+        benchmark:
+            "benchmarks/diamond_db.bench"
+        run:
+            import subprocess
+            from subprocess import DEVNULL
+
+            command_client = ["diamond-aligner", "makedb", "--in", str(input), "--db", str(output)]
+            command_cluster = ["diamond", "makedb", "--in", str(input), "--db", str(output)]
+            try:
+                subprocess.call(command_client,stdout=DEVNULL)
+
+            except:
+                subprocess.call(command_cluster,stdout=DEVNULL)
+
+
+    rule diamond_blastp:
+        input:
+            db=DDB,
+            fasta=CAT_F
+        output:
+            DBT
+        log:
+            "logs/diamond_blatp.log"
+        benchmark:
+            "benchmarks/diamond_blatp.bench"
+        run:
+            import subprocess
+            from subprocess import DEVNULL
+
+            command_client = ["diamond-aligner", "blastp", "-d", str(input.db), "-q", str(input.fasta),
+                       "-o", str(output), "-e", "1e-5", "--sensitive", "-f", "6", "qseqid", "qlen",
+                       "qstart", "qend", "sseqid", "slen", "sstart", "send", "length", "pident",
+                       "ppos", "score", "evalue", "bitscore"]
+
+            command_cluster = ["diamond", "blastp", "-d", str(input.db), "-q", str(input.fasta), "-o",
+                       str(output), "-e", "1e-5", "--sensitive", "-f", "6", "qseqid", "qlen",
+                       "qstart", "qend", "sseqid", "slen", "sstart", "send", "length", "pident",
+                       "ppos", "score", "evalue", "bitscore"]
+            try:
+                subprocess.call(command_client,stdout=DEVNULL)
+
+            except:
+                subprocess.call(command_cluster,stdout=DEVNULL)
+
+
+rule filter:
+    input:
+        DBT
+    params:
+        overlap=PCOV,
+        identity=PIDENT,
+        evalue=EVAL
+    output:
+        FILTR,
+        FILTR_S
+    log:
+        "logs/filter.log"
+    benchmark:
+        "benchmarks/filter.bench"
+    script:
+        "modules/filter.py"
+
+
+if config["conversion"]:
+    rule diamond2graph:
+        input:
+            FILTR
+        output:
+            EDGES,
+            VERTI
+        log:
+            "logs/diamond2graph.log"
+        benchmark:
+            "benchmarks/diamond2graph.bench"
+        script:
+            "modules/diamond2graph.py"
+
+
+rule attributes:
+        input:
+            an_files=AN_F,
+            indices=IDX
+        output:
+            ATTRIB
+        log:
+            "logs/attributes.log"
+        benchmark:
+            "benchmarks/attributes.bench"
+        params:
+            columns=COL
+        script:
+            "modules/attributes.py"
+
+
+if not config["attributes"]:
+    rule vertices:
+        input:
+            attrib=ATTRIB,
+            vertices=VERTI,
+            indices=IDX
+        output:
+            VER_ATTRIB
+        log:
+            "logs/add_attributes.log"
+        benchmark:
+            "benchmarks/add_attributes.bench"
+        params:
+            columns=COL
+        script:
+            "modules/add.py"
+
+
+rule network:
+    input:
+        edges=EDGES,
+        vertices=VER_ATTRIB
+    output:
+        COL_RESLTS
+    log:
+        "logs/network.log"
+    benchmark:
+        "benchmarks/network.bench"
+    params:
+        neighbours=NGB,
+        columns=COL,
+        isolated=ISOL,
+        similarity=NET_F,
+        overlap=PCOV,
+        identity=PIDENT
+    script:
+        "modules/network.py"
