@@ -1,0 +1,14 @@
+cluster:
+  sbatch
+    --partition={resources.partition}
+    --cpus={resources.cpus}
+    --mem={resources.mem}GB
+    --mail-user={resources.mailuser}
+    --mail-type={resources.mailtype}
+
+default-resources:
+  - partition=long
+  - mailuser=klein.dylan@outlook.com
+  - mailtype=ALL
+  - mem=200
+  - cpus=12
