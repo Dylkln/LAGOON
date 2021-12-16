@@ -1,19 +1,19 @@
-import glob
-
 configfile: "config/config.yml"
 
 def get_files(config):
+    import glob
     return glob.glob(config)
 
 def get_attrib_files(config):
+    import glob
     files = glob.glob(config)
     if len(files) == 1:
         f = []
         with open(files[0], "r") as fin:
             for line in fin:
                 f.append(line.strip())
-        return [i.split("-")[1] for i in f]
-    return [i.split("-")[1] for i in files]
+        return ["_".join(i.split("/")[-1].split("-")[:2]) for i in f]
+    return ["_".join(i.split("/")[-1].split("-")[:2]) for i in files]
 
 # ==================================== GET CONFIG / GET FILES ==================================== #
 
@@ -46,8 +46,7 @@ VERTI = expand("results/diamond_ssn_pcov{overlap}_pident{identity}.vertices",
                 identity=PIDENT)
 
 if not config["attributes"]:
-    ATTRIB = expand("results/attributes/{files}.attributes",
-                     files=get_attrib_files(config["annotation"]))
+    ATTRIB = expand("results/attributes/{files}.attributes", files=get_attrib_files(config["annotation"]))
 else:
     ATTRIB = config["attributes"]
 

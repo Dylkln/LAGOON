@@ -47,8 +47,8 @@ def read_fasta_files(files, output):
                 name = name.replace("_", "-") + "-1"
                 for record in records:
                     if "TRINITY" in record.id:
-                        record.id = record.id.replace("TRINITY", name)
-                        record.description = record.description.replace("TRINITY", name)
+                        record.id = record.id.replace("TRINITY", name.upper())
+                        record.description = record.description.replace("TRINITY", name.upper())
                     record.id = record.id.replace("_", "-")
                     record.description = record.description.replace("_", "-")
                     index.write(f"{i}\t{record.id}\t{record.description}\n")

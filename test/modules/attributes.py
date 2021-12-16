@@ -2,8 +2,10 @@ import os
 import csv
 import time
 
-def adapt_row(row, columns, i_dict):
 
+def adapt_row(row, columns, i_dict):
+    if row[columns[0]] not in i_dict:
+        return False, False, False
     n = i_dict[row[columns[0]]]
     c = columns[1:]
     d = {k: v for k, v in row.items() if k in c}
@@ -38,7 +40,6 @@ def treat_annotation(an_files, columns, indices):
     at_dict = {}
     i_dict = {}
 
-
     with open(indices, "r") as f:
         for line in f:
             llist = line.split("\t")[:2]
@@ -46,15 +47,17 @@ def treat_annotation(an_files, columns, indices):
 
     for file in an_files:
         reader = csv.DictReader(open(file), delimiter="\t")
-        n = file.split("-")[1]
+        n = "_".join(file.split("-")[0:2]).split("/")[1]
         for row in reader:
             d, nc, c = adapt_row(row, columns, i_dict)
-            if n not in at_dict.keys():
-                at_dict[n] = {}
-            if nc not in at_dict[n].keys():
-                at_dict[n][nc] = {k: set() for k in d.keys()}
-            for k, v in d.items():
-                at_dict[n][nc][k].add(v)
+            if d:
+                if n not in at_dict.keys():
+                    at_dict[n] = {}
+                if nc not in at_dict[n].keys():
+                    at_dict[n][nc] = {k: set() for k in d.keys()}
+                for k, v in d.items():
+                    at_dict[n][nc][k].add(v)
+
     return at_dict
 
 
@@ -65,13 +68,13 @@ def create_attributes_dict(an_files, columns, indices):
     return treat_annotation(files, columns, indices)
 
 
-def save_attributes(at_dict, columns):
+def save_attributes(at_dict, columns, outputs):
     path = "./results/attributes/"
     if not os.path.exists(path):
         os.mkdir(path)
 
     for k, v in at_dict.items():
-        output = f"./results/attributes/{k}.attributes"
+        output = f"results/attributes/{k}.attributes"
         with open(output, "w") as f:
             f.write(";".join(columns) + "\n")
             for k2, v2 in v.items():
@@ -90,7 +93,7 @@ def main():
         log.write("*** Getting Attributes from files ***\n")
         at_dict = create_attributes_dict(files, columns, indices)
         log.write("*** Saving Attributes ***\n")
-        save_attributes(at_dict, columns)
+        save_attributes(at_dict, columns, snakemake.output)
         e = time.time()
         log.write(f"Operations done in {round(e - s, 2)} seconds")
 
