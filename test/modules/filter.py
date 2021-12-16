@@ -58,21 +58,21 @@ def filter(inputfile, outputfile, cov, ident):
 def filter_file(identity, overlap, ssn, log):
     for i in identity:
         for j in overlap:
-            print("*** FILTERING FILE ***", file = log)
-            print(f"filtering infos ||| coverage : {j}%, identity : {i}%", file = log)
+            print("*** FILTERING FILE ***", file=log)
+            print(f"filtering infos ||| coverage : {j}%, identity : {i}%", file=log)
             output = f"{ssn}_pcov{int(j)}_pident{int(i)}"
             al_ssn, al_filt, nb_nssn, nb_nfilt = filter(ssn, output, j, i)
             rm = al_ssn - al_filt
             rmnb = nb_nssn - nb_nfilt
-            print(f"nb of alignments in base SSN : {al_ssn}", file = log)
+            print(f"nb of alignments in base SSN : {al_ssn}", file=log)
             print(f"nb of alignments in filtered SSN : {al_filt} ({percentage(al_filt, al_ssn)})",
-                  file = log)
-            print(f"nb of alignments removed : {rm} ({percentage(rm, al_ssn)})", file = log)
-            print(f"nb of nodes in base SSN : {nb_nssn}", file = log)
+                  file=log)
+            print(f"nb of alignments removed : {rm} ({percentage(rm, al_ssn)})", file=log)
+            print(f"nb of nodes in base SSN : {nb_nssn}", file=log)
             print(f"nb of nodes in filtered SSN : {nb_nfilt} ({percentage(nb_nfilt, nb_nssn)})",
-                  file = log)
-            print(f"nb of nodes removed : {rmnb} ({percentage(rmnb, nb_nssn)})", file = log)
-            print("*** Saving Stats ***\n", file = log)
+                  file=log)
+            print(f"nb of nodes removed : {rmnb} ({percentage(rmnb, nb_nssn)})", file=log)
+            print("*** Saving Stats ***\n", file=log)
             output_stats = f"{output}_stats"
             save_stats(output_stats, al_ssn, al_filt, nb_nssn, nb_nfilt)
 

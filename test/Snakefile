@@ -127,15 +127,16 @@ if FASTA:
             import subprocess
             from subprocess import DEVNULL
 
-            command_client = ["diamond-aligner", "blastp", "-d", str(input.db), "-q", str(input.fasta),
-                       "-o", str(output), "-e", "1e-5", "--sensitive", "-f", "6", "qseqid", "qlen",
-                       "qstart", "qend", "sseqid", "slen", "sstart", "send", "length", "pident",
-                       "ppos", "score", "evalue", "bitscore"]
+            command_client = ["diamond-aligner", "blastp", "-d", str(input.db), "-q",
+                              str(input.fasta), "-o", str(output), "-e", "1e-5", "--sensitive",
+                              "-f", "6", "qseqid", "qlen", "qstart", "qend", "sseqid", "slen",
+                              "sstart", "send", "length", "pident", "ppos", "score", "evalue",
+                              "bitscore"]
 
-            command_cluster = ["diamond", "blastp", "-d", str(input.db), "-q", str(input.fasta), "-o",
-                       str(output), "-e", "1e-5", "--sensitive", "-f", "6", "qseqid", "qlen",
-                       "qstart", "qend", "sseqid", "slen", "sstart", "send", "length", "pident",
-                       "ppos", "score", "evalue", "bitscore"]
+            command_cluster = ["diamond", "blastp", "-d", str(input.db), "-q", str(input.fasta),
+                               "-o", str(output), "-e", "1e-5", "--sensitive", "-f", "6", "qseqid",
+                               "qlen", "qstart", "qend", "sseqid", "slen", "sstart", "send",
+                               "length", "pident", "ppos", "score", "evalue", "bitscore"]
             try:
                 subprocess.call(command_client,stdout=DEVNULL)
 
