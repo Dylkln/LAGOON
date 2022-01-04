@@ -24,6 +24,13 @@ diamond_blastp: results/diamond_ssn
 # The name of the file containing the index associated with the sequence (to reduce memory usage).
 indices: seqname_index.indices
 
+# ===================================== DISTRIBUTION GRAPHS ====================================== #
+
+distribution:
+  - overlap
+  - identity
+  - evalue
+
 
 # ========================================== FILTRATION ========================================== #
 
@@ -33,11 +40,7 @@ indices: seqname_index.indices
 
 filtration:
   overlap:
-    - 80
-    - 85
   identity:
-    - 80
-    - 85
   evalue:
 
 # If you already have filtered file(s), you can put their path below, else, leave blank
@@ -92,7 +95,8 @@ conversion: true
 # type the path of the file containing the graph, else, leave blank
 network_file:
 
-# The number of minimum neighbours you want in your connected components of the sequence similarity network
+# The number of minimum neighbours you want in your connected components of the sequence similarity
+# network
 neighbours: 3
 
 # If you want to REMOVE ISOLATED nodes, insert "yes", else leave blank.

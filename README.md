@@ -61,7 +61,7 @@ Leave a blank for any steps you don't want.
 ### Utilisation
 
 You can familiarize yourself with the program using the test script.
-This script is located on EGmnhn/test.
+This script is located on EGmnhn/test. You must have at least 6GB of RAM to run the test.
 
 To use it, you can launch this command :
 

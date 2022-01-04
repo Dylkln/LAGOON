@@ -47,7 +47,7 @@ def treat_annotation(an_files, columns, indices):
 
     for file in an_files:
         reader = csv.DictReader(open(file), delimiter="\t")
-        n = "_".join(file.split("-")[0:2]).split("/")[1]
+        n = "_".join(file.split("-")[:2]).split("/")[1]
         for row in reader:
             d, nc, c = adapt_row(row, columns, i_dict)
             if d:
@@ -68,7 +68,7 @@ def create_attributes_dict(an_files, columns, indices):
     return treat_annotation(files, columns, indices)
 
 
-def save_attributes(at_dict, columns, outputs):
+def save_attributes(at_dict, columns):
     path = "./results/attributes/"
     if not os.path.exists(path):
         os.mkdir(path)
@@ -93,7 +93,7 @@ def main():
         log.write("*** Getting Attributes from files ***\n")
         at_dict = create_attributes_dict(files, columns, indices)
         log.write("*** Saving Attributes ***\n")
-        save_attributes(at_dict, columns, snakemake.output)
+        save_attributes(at_dict, columns)
         e = time.time()
         log.write(f"Operations done in {round(e - s, 2)} seconds")
 

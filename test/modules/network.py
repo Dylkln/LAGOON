@@ -554,20 +554,21 @@ def transform_list(l):
     return lt
 
 
-def find_io(overlap, identity, edges, vertices, outputs):
+def find_io(overlap, identity, eval, edges, vertices, outputs):
     in_files = []
     length = len(edges)
 
     for i in range(length):
-        if f"pcov{overlap}" in edges[i] and f"pident{identity}" in edges[i]:
+        if f"{overlap}" in edges[i] and f"{identity}" in edges[i] and f"{eval}" in edges[i]:
             in_files.append(edges[i])
-        if f"pcov{overlap}" in vertices[i] and f"pident{identity}" in vertices[i]:
+        if f"{overlap}" in vertices[i] and f"{identity}" in vertices[i] and f"{eval}" in \
+                vertices[i]:
             in_files.append(vertices[i])
 
     out_files = [
         f
         for f in outputs
-        if f"pcov{overlap}" in f and f"pident{identity}" in f
+        if f"{overlap}" in f and f"{identity}" in f and f"{eval}" in f
     ]
 
     return in_files, out_files
@@ -589,35 +590,37 @@ def main():
         neighbours = snakemake.params.neighbours
         columns = snakemake.params.columns
         isolated = snakemake.params.isolated
+        eval = snakemake.params.eval
 
         for ov in overlap:
             for id in identity:
-                in_files, out_files = find_io(ov, id, in_edges, in_vertices, outputs)
+                for ev in eval:
+                    in_files, out_files = find_io(ov, id, ev, in_edges, in_vertices, outputs)
 
-                # creates pandas dataframe of edges and nodes
-                edges = pd.read_csv(in_files[0], sep=";")
-                nodes = pd.read_csv(in_files[1], sep=";", low_memory=False)
+                    # creates pandas dataframe of edges and nodes
+                    edges = pd.read_csv(in_files[0], sep=";")
+                    nodes = pd.read_csv(in_files[1], sep=";", low_memory=False)
 
-                # create an igraph Graph
-                g = ig.Graph.DataFrame(edges, directed=False)
+                    # create an igraph Graph
+                    g = ig.Graph.DataFrame(edges, directed=False)
 
-                # remove isolated nodes
-                if isolated == "yes":
-                    to_del = [v.index for v in g.vs if v.degree() == 0]
-                    g.delete_vertices(to_del)
+                    # remove isolated nodes
+                    if isolated == "yes":
+                        to_del = [v.index for v in g.vs if v.degree() == 0]
+                        g.delete_vertices(to_del)
 
 
-                for index, i in enumerate(columns):
-                    t = [j for j in nodes["name"]] if index == 0 else [j for j in nodes[i]]
-                    g.vs[i] = t
-                # decompose graph into subgraph
-                g_cc = g.decompose(minelements=neighbours)
+                    for index, i in enumerate(columns):
+                        t = [j for j in nodes["name"]] if index == 0 else [j for j in nodes[i]]
+                        g.vs[i] = t
+                    # decompose graph into subgraph
+                    g_cc = g.decompose(minelements=neighbours)
 
-                # get number of connected components
-        #        nb_of_subgraph = len(g_cc)
+                    # get number of connected components
+            #        nb_of_subgraph = len(g_cc)
 
-                # get a dictionary containing all data from CC
-                get_data_from_cc(g_cc, columns, out_files)
+                    # get a dictionary containing all data from CC
+                    get_data_from_cc(g_cc, columns, out_files)
 
 if __name__ == '__main__':
     main()

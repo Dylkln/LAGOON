@@ -9,10 +9,16 @@ def percentage(part, whole):
     return str(round(percent, 2)) + "%"
 
 
-def filter(inputfile, outputfile, cov, ident):
+def get_eval(row):
+    e = row["evalue"]
+    return int(e.split("e")[1])
+
+
+def filter(inputfile, outputfile, cov, ident, eval):
     al_ssn, al_filt, nb_nssn, nb_nfilt = 0, 0, 0, 0
     n_ssn = set()
     n_filt = set()
+    ev = int(eval.split("e")[1])
 
     fieldnames = ["qseqid", "qlen", "qstart", "qend", "sseqid", "slen",
                   "sstart", "send", "length", "pident", "ppos", "score", "evalue",
@@ -34,7 +40,7 @@ def filter(inputfile, outputfile, cov, ident):
 
         al_ssn += 1
         n = [row["qseqid"], row["sseqid"]]
-
+        e_row = get_eval(row)
         if n[0] not in n_ssn:
             n_ssn.add(n[0])
             nb_nssn += 1
@@ -42,6 +48,7 @@ def filter(inputfile, outputfile, cov, ident):
         if (
                 row["pident"]
                 and row["ppos"]
+                and e_row >= ev
                 and float(row["pident"]) >= ident
                 and float(row["ppos"]) >= cov
                 and n[0] != n[1]
@@ -55,26 +62,28 @@ def filter(inputfile, outputfile, cov, ident):
     return al_ssn, al_filt, nb_nssn, nb_nfilt
 
 
-def filter_file(identity, overlap, ssn, log):
+def filter_file(identity, overlap, eval, ssn, log):
+
     for i in identity:
         for j in overlap:
-            print("*** FILTERING FILE ***", file=log)
-            print(f"filtering infos ||| coverage : {j}%, identity : {i}%", file=log)
-            output = f"{ssn}_pcov{int(j)}_pident{int(i)}"
-            al_ssn, al_filt, nb_nssn, nb_nfilt = filter(ssn, output, j, i)
-            rm = al_ssn - al_filt
-            rmnb = nb_nssn - nb_nfilt
-            print(f"nb of alignments in base SSN : {al_ssn}", file=log)
-            print(f"nb of alignments in filtered SSN : {al_filt} ({percentage(al_filt, al_ssn)})",
-                  file=log)
-            print(f"nb of alignments removed : {rm} ({percentage(rm, al_ssn)})", file=log)
-            print(f"nb of nodes in base SSN : {nb_nssn}", file=log)
-            print(f"nb of nodes in filtered SSN : {nb_nfilt} ({percentage(nb_nfilt, nb_nssn)})",
-                  file=log)
-            print(f"nb of nodes removed : {rmnb} ({percentage(rmnb, nb_nssn)})", file=log)
-            print("*** Saving Stats ***\n", file=log)
-            output_stats = f"{output}_stats"
-            save_stats(output_stats, al_ssn, al_filt, nb_nssn, nb_nfilt)
+            for h in eval:
+                print("*** FILTERING FILE ***", file=log)
+                print(f"filtering infos ||| coverage : {j}%, identity : {i}%, eval : {h}", file=log)
+                output = f"{ssn}_{int(j)}_{int(i)}_{h}"
+                al_ssn, al_filt, nb_nssn, nb_nfilt = filter(ssn, output, j, i, h)
+                rm = al_ssn - al_filt
+                rmnb = nb_nssn - nb_nfilt
+                print(f"nb of alignments in base SSN : {al_ssn}", file=log)
+                print(f"nb of alignments in filtered SSN : {al_filt} ({percentage(al_filt, al_ssn)})",
+                      file=log)
+                print(f"nb of alignments removed : {rm} ({percentage(rm, al_ssn)})", file=log)
+                print(f"nb of nodes in base SSN : {nb_nssn}", file=log)
+                print(f"nb of nodes in filtered SSN : {nb_nfilt} ({percentage(nb_nfilt, nb_nssn)})",
+                      file=log)
+                print(f"nb of nodes removed : {rmnb} ({percentage(rmnb, nb_nssn)})", file=log)
+                print("*** Saving Stats ***\n", file=log)
+                output_stats = f"{output}_stats"
+                save_stats(output_stats, al_ssn, al_filt, nb_nssn, nb_nfilt)
 
 
 def save_stats(output, al_ssn, al_filt, nb_nssn, nb_nfilt):
@@ -116,11 +125,13 @@ def save_stats(output, al_ssn, al_filt, nb_nssn, nb_nfilt):
 
 
 def main():
+
     with open(str(snakemake.log), "w") as log:
         s = time.time()
         log.write("*** Filtering information provided ***\n")
         filter_file(snakemake.params.identity,
                     snakemake.params.overlap,
+                    snakemake.params.evalue,
                     str(snakemake.input), log)
         e = time.time()
         log.write(f"Operations done in {round(e - s, 2)} seconds")
