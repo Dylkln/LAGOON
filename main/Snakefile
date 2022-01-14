@@ -27,38 +27,53 @@ COL = config["columns"]
 NET_F = config["network_file"]
 NGB = config["neighbours"]
 PCOV = config["filtration"]["overlap"]
+if not PCOV:
+    PCOV = [80]
 PIDENT = config["filtration"]["identity"]
+if not PIDENT:
+    PIDENT = [80]
 EVAL = config["filtration"]["evalue"]
+if not EVAL:
+    EVAL = ["1e-50"]
 ISOL = config["isolated"]
 IDX = f"index/{config['indices']}"
+DIS = config["distribution"]
 
-FILTR = expand("results/diamond_ssn_pcov{overlap}_pident{identity}",
+DISTRIB = expand("distribution/{distribution}.pdf", distribution= DIS)
+
+FILTR = expand("results/diamond_ssn_{overlap}_{identity}_{eval}",
                 overlap=PCOV,
-                identity=PIDENT)
-FILTR_S = expand("results/diamond_ssn_pcov{overlap}_pident{identity}_stats",
+                identity=PIDENT,
+                eval=EVAL)
+FILTR_S = expand("results/diamond_ssn_{overlap}_{identity}_{eval}_stats",
                   overlap=PCOV,
-                  identity=PIDENT)
-EDGES = expand("results/diamond_ssn_pcov{overlap}_pident{identity}.edges",
+                  identity=PIDENT,
+                  eval=EVAL)
+EDGES = expand("results/diamond_ssn_{overlap}_{identity}_{eval}.edges",
                 overlap=PCOV,
-                identity=PIDENT)
-VERTI = expand("results/diamond_ssn_pcov{overlap}_pident{identity}.vertices",
+                identity=PIDENT,
+                eval=EVAL)
+VERTI = expand("results/diamond_ssn_{overlap}_{identity}_{eval}.vertices",
                 overlap=PCOV,
-                identity=PIDENT)
+                identity=PIDENT,
+                eval=EVAL)
 
 if not config["attributes"]:
-    ATTRIB = expand("results/attributes/{files}.attributes", files=get_attrib_files(config["annotation"]))
+    ATTRIB = expand("results/attributes/{files}.attributes",
+    files=get_attrib_files(config["annotation"]))
 else:
     ATTRIB = config["attributes"]
 
-VER_ATTRIB = expand("results/diamond_ssn_pcov{overlap}_pident{identity}_with_attributes.vertices",
-                overlap=PCOV,
-                identity=PIDENT)
-
-COL_RESLTS = expand("results/pcov{overlap}_pident{identity}_ssn_{col}_results",
+VER_ATTRIB = expand("results/diamond_ssn_{overlap}_{identity}_{eval}_with_attributes.vertices",
                 overlap=PCOV,
                 identity=PIDENT,
-                col=COL)
+                eval=EVAL)
 
+COL_RESLTS = expand("results/{overlap}_{identity}_{eval}_ssn_{col}_results",
+                overlap=PCOV,
+                identity=PIDENT,
+                eval=EVAL,
+                col=COL)
 
 # ================================================================================================ #
 
@@ -67,6 +82,7 @@ rule all:
         CAT_F,
         DDB,
         DBT,
+        DISTRIB,
         IDX,
         FILTR,
         FILTR_S,
@@ -91,6 +107,7 @@ if FASTA:
         script:
             "modules/cat.py"
 
+
     rule diamond_db:
         input:
             CAT_F
@@ -102,15 +119,23 @@ if FASTA:
             "benchmarks/diamond_db.bench"
         run:
             import subprocess
+            import time
             from subprocess import DEVNULL
 
-            command_client = ["diamond-aligner", "makedb", "--in", str(input), "--db", str(output)]
-            command_cluster = ["diamond", "makedb", "--in", str(input), "--db", str(output)]
-            try:
-                subprocess.call(command_client,stdout=DEVNULL)
+            with open(str(log),"w") as l:
+                s = time.time()
+                l.write("*** Getting command ***\n")
+                command_client = ["diamond-aligner", "makedb", "--in", str(input), "--db",
+                                  str(output)]
+                command_cluster = ["diamond", "makedb", "--in", str(input), "--db", str(output)]
+                l.write("*** Creation of Diamond database ***\n")
+                try:
+                    subprocess.call(command_client,stdout=DEVNULL)
 
-            except:
-                subprocess.call(command_cluster,stdout=DEVNULL)
+                except:
+                    subprocess.call(command_cluster,stdout=DEVNULL)
+                e = time.time()
+                l.write(f"Database created in {round(e - s,2)} seconds")
 
 
     rule diamond_blastp:
@@ -125,22 +150,44 @@ if FASTA:
             "benchmarks/diamond_blatp.bench"
         run:
             import subprocess
+            import time
             from subprocess import DEVNULL
+            with open(str(log),"w") as l:
+                s = time.time()
+                l.write("*** Getting command ***\n")
 
-            command_client = ["diamond-aligner", "blastp", "-d", str(input.db), "-q", str(input.fasta),
-                       "-o", str(output), "-e", "1e-5", "--sensitive", "-f", "6", "qseqid", "qlen",
-                       "qstart", "qend", "sseqid", "slen", "sstart", "send", "length", "pident",
-                       "ppos", "score", "evalue", "bitscore"]
+                command_client = ["diamond-aligner", "blastp", "-d", str(input.db), "-q",
+                                  str(input.fasta), "-o", str(output), "-e", "1e-5", "--sensitive",
+                                  "-f", "6", "qseqid", "qlen", "qstart", "qend", "sseqid", "slen",
+                                  "sstart", "send", "length", "pident", "ppos", "score", "evalue",
+                                  "bitscore"]
 
-            command_cluster = ["diamond", "blastp", "-d", str(input.db), "-q", str(input.fasta), "-o",
-                       str(output), "-e", "1e-5", "--sensitive", "-f", "6", "qseqid", "qlen",
-                       "qstart", "qend", "sseqid", "slen", "sstart", "send", "length", "pident",
-                       "ppos", "score", "evalue", "bitscore"]
-            try:
-                subprocess.call(command_client,stdout=DEVNULL)
+                command_cluster = ["diamond", "blastp", "-d", str(input.db), "-q", str(input.fasta),
+                                   "-o", str(output), "-e", "1e-5", "--sensitive", "-f", "6",
+                                   "qseqid", "qlen", "qstart", "qend", "sseqid", "slen", "sstart",
+                                   "send", "length", "pident", "ppos", "score", "evalue",
+                                   "bitscore"]
+                l.write("*** Alignment of sequences ***\n")
+                try:
+                    subprocess.call(command_client,stdout=DEVNULL)
 
-            except:
-                subprocess.call(command_cluster,stdout=DEVNULL)
+                except:
+                    subprocess.call(command_cluster,stdout=DEVNULL)
+                e = time.time()
+                l.write(f"Alignment done in {round(e - s,2)} seconds")
+
+
+rule distribution:
+    input:
+        DBT
+    output:
+        DISTRIB
+    log:
+        "logs/distribution.log"
+    benchmark:
+        "benchmarks/distribution.bench"
+    script:
+        "modules/distribution.py"
 
 
 rule filter:
@@ -226,6 +273,7 @@ rule network:
         isolated=ISOL,
         similarity=NET_F,
         overlap=PCOV,
-        identity=PIDENT
+        identity=PIDENT,
+        eval=EVAL
     script:
         "modules/network.py"

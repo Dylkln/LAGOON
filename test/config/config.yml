@@ -41,6 +41,8 @@ distribution:
 filtration:
   overlap:
   identity:
+    - 80
+    - 85
   evalue:
 
 # If you already have filtered file(s), you can put their path below, else, leave blank
@@ -83,7 +85,7 @@ columns:
 # ========================================== CONVERSION ========================================== #
 
 
-# If you have a diamond blatp output already filtered but not converted to Igraph input, type "true"
+# If you have a diamond blastp output already filtered but not converted to Igraph input, type "true"
 # else, leave blank
 conversion: true
 

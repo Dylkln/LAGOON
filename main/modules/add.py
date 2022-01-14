@@ -106,7 +106,7 @@ def get_fname(names, files, i_dict):
         for file in files:
             if file not in fn_dict:
                 fn_dict[file] = set()
-            i = "_".join(iname.split("-")[0:2])
+            i = "_".join(iname.split("-")[:2])
             if re.search(i, file):
                 fn_dict[file].add(n)
 
@@ -128,7 +128,7 @@ def get_prefix(n):
         an ORF ID prefix
     """
 
-    pr = n.replace("-", ".").split(".")[0:5]
+    pr = n.replace("-", ".").split(".")[:5]
 
     if pr[3] != "Transcript":
         del pr[-1]

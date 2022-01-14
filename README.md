@@ -45,7 +45,7 @@ conda env create --file environment.yml
 3. Activate conda environment
 
 ```
-conda activate trophomics
+conda activate snkmk
 ```
 
 ## Usage
@@ -80,13 +80,13 @@ available
 
 If you use this command in the test repository, it will treat all test files (transdecoder and
 annotation), will filter the network keeping sequences with at least 80% overlap and with at least
-80% identity. The column names used as attributes are "peptides", "length", and "database".
+80% identity and an e-value < 1e-50. The column names used as attributes are "peptides", "length", and "database".
 
 ### Data used by the program
 
 All you data must be standardized, please refer to the config.yml.
 
 Your Input must be a path to a fasta file or a file containing the list of path to fasta files.
-Annotation files must contain in the first column all **ID/Name** of sequences contained in fasta
+Annotation files must contain in the first column all **ID / Name** of sequences contained in fasta
 format files.
 The test data are part of a bigger dataset called [MetDB](http://metdb.sb-roscoff.fr/metdb/).

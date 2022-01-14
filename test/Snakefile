@@ -1,6 +1,3 @@
-import time
-import os
-
 configfile: "config/config.yml"
 
 def get_files(config):
@@ -19,14 +16,6 @@ def get_attrib_files(config):
     return ["_".join(i.split("/")[-1].split("-")[:2]) for i in files]
 
 # ==================================== GET CONFIG / GET FILES ==================================== #
-
-start = time.time()
-p = "logs/"
-if not os.path.exists(p):
-    os.makedirs(p)
-logs = open("logs/workflow_log.log", "w")
-print("Getting configuration from file . . .", file = logs)
-st = time.time()
 
 FASTA = get_files(config["fasta"])
 CAT_F = config["concat_file"]
@@ -70,7 +59,8 @@ VERTI = expand("results/diamond_ssn_{overlap}_{identity}_{eval}.vertices",
                 eval=EVAL)
 
 if not config["attributes"]:
-    ATTRIB = expand("results/attributes/{files}.attributes", files=get_attrib_files(config["annotation"]))
+    ATTRIB = expand("results/attributes/{files}.attributes",
+    files=get_attrib_files(config["annotation"]))
 else:
     ATTRIB = config["attributes"]
 
@@ -85,12 +75,7 @@ COL_RESLTS = expand("results/{overlap}_{identity}_{eval}_ssn_{col}_results",
                 eval=EVAL,
                 col=COL)
 
-en = time.time()
-print(f"Done in {round(en - st, 2)} seconds", file = logs)
-
 # ================================================================================================ #
-
-print("Beginning analysis . . .", file = logs)
 
 rule all:
     input:
@@ -109,9 +94,6 @@ rule all:
 
 
 if FASTA:
-    print("Concatenation of fasta files . . .", file = logs)
-    st = time.time()
-
     rule cat:
         input:
             FASTA
@@ -124,12 +106,6 @@ if FASTA:
             "benchmarks/cat.bench"
         script:
             "modules/cat.py"
-
-
-    en = time.time()
-    print(f"Done in {round(en - st,2)} seconds",file=logs)
-    print("Creation of Diamond database . . .", file = logs)
-    st = time.time()
 
 
     rule diamond_db:
@@ -160,12 +136,6 @@ if FASTA:
                     subprocess.call(command_cluster,stdout=DEVNULL)
                 e = time.time()
                 l.write(f"Database created in {round(e - s,2)} seconds")
-
-
-    en = time.time()
-    print(f"Done in {round(en - st,2)} seconds",file=logs)
-    print("Alignment of sequences . . .", file = logs)
-    st = time.time()
 
 
     rule diamond_blastp:
@@ -207,13 +177,6 @@ if FASTA:
                 l.write(f"Alignment done in {round(e - s,2)} seconds")
 
 
-    en = time.time()
-    print(f"Done in {round(en - st,2)} seconds",file=logs)
-
-print("Creation of Distribution graphs . . .", file = logs)
-st = time.time()
-
-
 rule distribution:
     input:
         DBT
@@ -225,12 +188,6 @@ rule distribution:
         "benchmarks/distribution.bench"
     script:
         "modules/distribution.py"
-
-
-en = time.time()
-print(f"Done in {round(en - st, 2)} seconds", file = logs)
-print("Filtration of sequences . . .", file = logs)
-st = time.time()
 
 
 rule filter:
@@ -251,14 +208,7 @@ rule filter:
         "modules/filter.py"
 
 
-en = time.time()
-print(f"Done in {round(en - st, 2)} seconds", file = logs)
-
-
 if config["conversion"]:
-    print("Conversion into Igraph format . . .", file = logs)
-    st = time.time()
-
     rule diamond2graph:
         input:
             FILTR
@@ -271,13 +221,6 @@ if config["conversion"]:
             "benchmarks/diamond2graph.bench"
         script:
             "modules/diamond2graph.py"
-
-
-    en = time.time()
-    print(f"Done in {round(en - st,2)} seconds",file=logs)
-
-print("Getting attributes from annotation files . . .", file = logs)
-st = time.time()
 
 
 rule attributes:
@@ -296,14 +239,7 @@ rule attributes:
             "modules/attributes.py"
 
 
-en = time.time()
-print(f"Done in {round(en - st, 2)} seconds", file = logs)
-
-
 if not config["attributes"]:
-    print("Adding attributes to vertices . . .", file = logs)
-    st = time.time()
-
     rule vertices:
         input:
             attrib=ATTRIB,
@@ -320,12 +256,6 @@ if not config["attributes"]:
         script:
             "modules/add.py"
 
-
-    en = time.time()
-    print(f"Done in {round(en - st,2)} seconds",file=logs)
-
-print("Creating the sequence similarity network Graph . . .", file = logs)
-st = time.time()
 
 rule network:
     input:
@@ -347,10 +277,3 @@ rule network:
         eval=EVAL
     script:
         "modules/network.py"
-
-
-en = time.time()
-print(f"Done in {round(en - st, 2)} seconds", file = logs)
-end = time.time()
-print(f"Workflow ended in {round(end - start, 2)} seconds", file = logs)
-logs.close()

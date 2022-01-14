@@ -1,5 +1,5 @@
 import math
-
+from collections import Counter
 import igraph as ig
 import pandas as pd
 
@@ -25,9 +25,9 @@ def db(string):
     """
     ll = [["PFAM", "PF"], ["SMART", "SM"], ["PROSITEPROFILES", "PS5"],
           ["GENE3D", "G3DSA"], ["PROSITEPATTERNS", "PS0"], ["SUPERFAMILY", "SSF"],
-          ["CDD", "cd"], ["TIGRFAM", "TIGR"], ["PIRSF", "PIRSF"],
+          ["CDD", "CD"], ["TIGRFAM", "TIGR"], ["PIRSF", "PIRSF"],
           ["PRINTS", "PR"], ["HAMAP", "MF"], ["PRODOM", "PD"],
-          ["SFLD", "SFLD"], ["PANTHER", "PTHR"], ["NA", "nan"]]
+          ["SFLD", "SFLD"], ["PANTHER", "PTHR"], ["NA", "NAN"]]
 
     d = {l[0]: l[1] for l in ll}
     for k, v in d.items():
@@ -52,7 +52,7 @@ def get_abund(l):
     d = {}
 
     for i in l:
-        iid = "-".join(i.split("-")[0:2])
+        iid = "-".join(i.split("-")[:2])
 
         if iid not in d.keys():
             d[iid] = 0
@@ -141,6 +141,16 @@ def get_count(l):
     return c
 
 
+def create_list_from_list_of_string(list_of_string):
+    l = []
+    for i in list_of_string:
+        if ',' in i:
+            l.extend(i.split(","))
+        else:
+            l.append(i)
+    return l
+
+
 def get_data_from_cc(g_cc, columns, out_files):
     """
     Retrives all wanted data from a connected component (CC)
@@ -163,10 +173,12 @@ def get_data_from_cc(g_cc, columns, out_files):
     for k, cc in enumerate(g_cc):
         cc_n = k + 1
         d[cc_n] = {}
-        for i, j in enumerate(columns):
+        for j in columns:
             if "database" in j:
-                f = get_db_id(cc.vs[j])
-                d[cc_n][j] = get_percent(get_db(f))
+                fl = create_list_from_list_of_string(get_db_id(cc.vs[j]))
+                fl_c = Counter(fl)
+                d[cc_n][j] = get_percent(fl)
+                d[cc_n]["homogeneity_score"] = get_homogeneity_score(fl_c)
             d[cc_n][j] = get_percent(cc.vs[j])
     save_data_dict(d, columns, out_files)
 
@@ -178,16 +190,27 @@ def find_output(c, outputs):
 
 
 def save_data_dict(d, columns, outputs):
+    d_h = {}
     for c in columns:
         o = find_output(c, outputs)
         tmp = []
         for k, v in d.items():
+            if v["homogeneity_score"]:
+                d_h[k] = v["homogeneity_score"]
             for k2, v2 in v[c].items():
                 tmp.append([str(k), str(k2), str(v2)])
+
         with open(o, "w") as f:
             print(f"CC\t{c}\tPercentage", file=f)
             for i in tmp:
                 print("\t".join(i), file=f)
+
+    o_hs = "_".join(outputs[0].split("_")[:3]) + "_homogeneity_score"
+    with open(o_hs, "w") as f:
+        print("CC\tHomogeneity_score", file=f)
+        for k, v in d_h.items():
+            print(f"{k}\t{v}", file=f)
+
 
 
 
@@ -391,7 +414,7 @@ def get_entropy(d):
 
 def get_homogeneity_score(d):
     """
-    Retrieves an homogeneity score from a dictionary
+    Retrieves a homogeneity score from a dictionary
 
     Parameters
     ----------
@@ -555,21 +578,23 @@ def transform_list(l):
 
 
 def find_io(overlap, identity, eval, edges, vertices, outputs):
-    in_files = []
+    in_files, out_files = [], []
     length = len(edges)
 
     for i in range(length):
-        if f"{overlap}" in edges[i] and f"{identity}" in edges[i] and f"{eval}" in edges[i]:
+        e = edges[i].split("_")
+        v = vertices[i].split("_")
+        if f"{overlap}" in e[2] and f"{identity}" in e[3] and f"{eval}" in e[4]:
             in_files.append(edges[i])
-        if f"{overlap}" in vertices[i] and f"{identity}" in vertices[i] and f"{eval}" in \
-                vertices[i]:
+        if f"{overlap}" in v[2] and f"{identity}" in v[3] and f"{eval}" in v[4]:
             in_files.append(vertices[i])
 
-    out_files = [
-        f
-        for f in outputs
-        if f"{overlap}" in f and f"{identity}" in f and f"{eval}" in f
-    ]
+    length = len(outputs)
+
+    for i in range(length):
+        f = outputs[i].split("_")
+        if f"{overlap}" in f[0] and f"{identity}" in f[1] and f"{eval}" in f[2]:
+            out_files.append(outputs[i])
 
     return in_files, out_files
 
@@ -580,17 +605,17 @@ def main():
     """
 
     similarity = snakemake.params.similarity
-    if not similarity:
+    in_edges = snakemake.input.edges
+    in_vertices = snakemake.input.vertices
+    outputs = snakemake.output
+    overlap = snakemake.params.overlap
+    identity = snakemake.params.identity
+    neighbours = snakemake.params.neighbours
+    columns = snakemake.params.columns
+    isolated = snakemake.params.isolated
+    eval = snakemake.params.eval
 
-        in_edges = snakemake.input.edges
-        in_vertices = snakemake.input.vertices
-        outputs = snakemake.output
-        overlap = snakemake.params.overlap
-        identity = snakemake.params.identity
-        neighbours = snakemake.params.neighbours
-        columns = snakemake.params.columns
-        isolated = snakemake.params.isolated
-        eval = snakemake.params.eval
+    if not similarity:
 
         for ov in overlap:
             for id in identity:
@@ -613,14 +638,30 @@ def main():
                     for index, i in enumerate(columns):
                         t = [j for j in nodes["name"]] if index == 0 else [j for j in nodes[i]]
                         g.vs[i] = t
+
                     # decompose graph into subgraph
                     g_cc = g.decompose(minelements=neighbours)
 
-                    # get number of connected components
-            #        nb_of_subgraph = len(g_cc)
-
                     # get a dictionary containing all data from CC
                     get_data_from_cc(g_cc, columns, out_files)
+
+                    ig.Graph.write_graphml(g, f"results/ssn_graph_{ov}_{id}_{ev}")
+
+    else:
+        for f in similarity:
+            g = ig.Graph.Read_GraphML(str(f))
+            o = "_".join(f.split("_")[2:])
+            out_files = ["results/" + o + f"_ssn_{i}_results" for i in columns]
+            if isolated == "yes":
+                to_del = [v.index for v in g.vs if v.degree() == 0]
+                g.delete_vertices(to_del)
+
+            # decompose graph into subgraph
+            g_cc = g.decompose(minelements=neighbours)
+
+            # get a dictionary containing all data from CC
+            get_data_from_cc(g_cc, columns, out_files)
+
 
 if __name__ == '__main__':
     main()
