@@ -1,35 +1,10 @@
 # ================================== Modules ==================================#
 
-import argparse
 import re
 import csv
 import time
 
-
 # =============================================================================#
-
-def arguments():
-    """
-    set arguments
-    """
-
-    parser = argparse.ArgumentParser()
-
-    # Mandatory arguments
-    parser.add_argument("-v", "--vertices_file", dest="vertices_file",
-                        type=str, required=False, nargs="+",
-                        help="The file containing all nodes")
-    parser.add_argument("-o", "--output", dest="output",
-                        type=str, required=False, nargs="+",
-                        help="the output file with repeating nodes removed")
-    parser.add_argument("-a", "--attribute_files", dest="attribute_files",
-                        type=str, required=False, default=None, nargs="+",
-                        help="the filtration wanted of a diamond output")
-    parser.add_argument("-cn", "--columns", dest="columns",
-                        type=str, required=False, default=None, nargs="+",
-                        help="the columns names used in attributes")
-
-    return parser.parse_args()
 
 
 def read_file(file):
@@ -45,6 +20,7 @@ def read_file(file):
     -------
 
         row : a row of the CSV file
+        col : the fieldnames of the file
     """
 
     with open(file, "r") as f_in:
@@ -55,6 +31,19 @@ def read_file(file):
 
 
 def read_csv(file):
+    """
+    Reads a file as CSV
+
+    Parameters
+    ----------
+
+        file : a CSV file
+
+    Yields
+    -------
+
+        reader : a CSV.Dictreader object
+    """
     with open(file, "r") as f_in:
         dialect = csv.Sniffer().sniff(f_in.readline())
         f_in.seek(0)
@@ -179,6 +168,20 @@ def write_rows(writer, rows):
 
 
 def find_output(file, outputs):
+    """
+    Retrieves the name of the file needed in a list of files
+
+    Parameters
+    ----------
+
+        file : a file to search for
+        outputs: a list of files
+
+    Returns
+    -------
+
+        f : a file name
+    """
     for f in outputs:
         name = file.split(".")[0]
         if name in f:
@@ -186,10 +189,15 @@ def find_output(file, outputs):
 
 
 def main():
+    # Opens Log file
     with open(str(snakemake.log), "w") as log:
         s = time.time()
         log.write("*** Getting input files and parameters ***\n")
+
+        # Get fieldnames
         fieldnames = ["name"] + snakemake.params.columns[1:]
+
+        # get index
         i_dict = {}
         with open(snakemake.input.indices, "r") as f:
             for line in f:
@@ -197,6 +205,8 @@ def main():
                 i_dict[llist[0]] = llist[1]
 
         log.write("*** Adding Attributes to the output file ***\n")
+
+        # add attributes to file
         for file in snakemake.input.vertices:
             out = find_output(file, snakemake.output)
             f_out = open(out, "w")

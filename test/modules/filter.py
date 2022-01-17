@@ -5,16 +5,25 @@ import time
 
 
 def percentage(part, whole):
+    """
+    Retrieves the percentage
+    """
     percent = 100 * float(part) / float(whole)
     return str(round(percent, 2)) + "%"
 
 
 def get_eval(row):
+    """
+    Retrieves the E-value
+    """
     e = row["evalue"]
     return int(e.split("e")[1])
 
 
 def filter(inputfile, outputfile, cov, ident, eval):
+    """
+    Filtration Function
+    """
     al_ssn, al_filt, nb_nssn, nb_nfilt = 0, 0, 0, 0
     n_ssn = set()
     n_filt = set()
@@ -63,7 +72,9 @@ def filter(inputfile, outputfile, cov, ident, eval):
 
 
 def filter_file(identity, overlap, eval, ssn, log):
-
+    """
+    Filters the File
+    """
     for i in identity:
         for j in overlap:
             for h in eval:
@@ -87,6 +98,9 @@ def filter_file(identity, overlap, eval, ssn, log):
 
 
 def save_stats(output, al_ssn, al_filt, nb_nssn, nb_nfilt):
+    """
+    Saves filtration stats
+    """
     rm = al_ssn - al_filt
     rmnb = nb_nssn - nb_nfilt
     with open(output, "w") as f:

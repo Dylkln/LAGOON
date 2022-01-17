@@ -4,6 +4,9 @@ from Bio import SeqIO
 
 
 def determine_file(file):
+    """
+    Checks if the file contains data or a list of path to files
+    """
     if type(file) != str:
         file = str(file)
     with open(file) as f:
@@ -12,6 +15,9 @@ def determine_file(file):
 
 
 def get_files_from_arg(file):
+    """
+    Retrieves a list of files
+    """
     if type(file) != str:
         file = str(file)
     files = []
@@ -23,7 +29,9 @@ def get_files_from_arg(file):
 
 
 def detect_files(files):
-
+    """
+    Checks if files is a file containing data or just containing path to other files
+    """
     fs = None
     for file in files:
         if determine_file(file):
@@ -36,9 +44,10 @@ def detect_files(files):
 
 
 def read_fasta_files(files, output):
-
+    """
+    Reads a fasta files and concatenate their content in an unique file
+    """
     i = 1
-
     with open(output[0], "w") as out:
         with open(output[1], "w") as index:
             for file in files:

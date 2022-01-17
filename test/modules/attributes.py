@@ -18,6 +18,9 @@ def adapt_row(row, columns, i_dict):
 
 
 def determine_file(file):
+    """
+    Checks if the file contains data or a list of path to files
+    """
     if type(file) != str:
         file = str(file)
     with open(file) as f:
@@ -26,6 +29,9 @@ def determine_file(file):
 
 
 def get_files_from_arg(file):
+    """
+    Retrieves a list of files
+    """
     if type(file) != str:
         file = str(file)
     files = []
@@ -37,6 +43,9 @@ def get_files_from_arg(file):
 
 
 def treat_annotation(an_files, columns, indices):
+    """
+    Treats annotation files
+    """
     at_dict = {}
     i_dict = {}
 
@@ -62,6 +71,9 @@ def treat_annotation(an_files, columns, indices):
 
 
 def create_attributes_dict(an_files, columns, indices):
+    """
+    Creates a dictionary containing all attributes
+    """
     if len(an_files) != 1 or not determine_file(an_files):
         return treat_annotation(an_files, columns, indices)
     files = get_files_from_arg(an_files)
@@ -69,6 +81,9 @@ def create_attributes_dict(an_files, columns, indices):
 
 
 def save_attributes(at_dict, columns):
+    """
+    Saves attributes in a file
+    """
     path = "./results/attributes/"
     if not os.path.exists(path):
         os.mkdir(path)
