@@ -10,10 +10,12 @@ def get_attrib_files(config):
     if len(files) == 1:
         f = []
         with open(files[0], "r") as fin:
+            if not os.path.exists(fin.readline()):
+                return [f.split("/")[-1].split(".")[0] for f in files]
             for line in fin:
                 f.append(line.strip())
-        return ["_".join(i.split("/")[-1].split("-")[:2]) for i in f]
-    return ["_".join(i.split("/")[-1].split("-")[:2]) for i in files]
+        return [i.split("/")[-1].split(".")[0] for i in f]
+    return [i.split("/")[-1].split(".")[0] for i in files]
 
 # ==================================== GET CONFIG / GET FILES ==================================== #
 

@@ -17,6 +17,8 @@ def get_eval(row):
     Retrieves the E-value
     """
     e = row["evalue"]
+    if e == "0.0":
+        return 0
     return int(e.split("e")[1])
 
 

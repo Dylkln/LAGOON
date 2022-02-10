@@ -282,6 +282,7 @@ def main():
                     # creates pandas dataframe of edges and nodes
                     edges = pd.read_csv(in_files[0], sep=";")
                     nodes = pd.read_csv(in_files[1], sep=";", low_memory=False)
+                    print(nodes)
 
                     # create an igraph Graph
                     g = ig.Graph.DataFrame(edges, directed=False)

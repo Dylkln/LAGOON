@@ -86,6 +86,8 @@ annotation), will filter the network keeping sequences with at least 80% overlap
 
 All you data must be standardized, please refer to the config.yml.
 
+**Your annotation files must have headers**
+
 Your Input must be a path to a fasta file or a file containing the list of path to fasta files.
 Annotation files must contain in the first column all **ID / Name** of sequences contained in fasta
 format files.

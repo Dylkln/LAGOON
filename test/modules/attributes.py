@@ -3,6 +3,27 @@ import csv
 import time
 
 
+def read_csv(file):
+    """
+    Reads a file as CSV
+
+    Parameters
+    ----------
+
+        file : a CSV file
+
+    Yields
+    -------
+
+        reader : a CSV.Dictreader object
+    """
+    with open(file, "r") as f_in:
+        dialect = csv.Sniffer().sniff(f_in.readline())
+        f_in.seek(0)
+        reader = csv.DictReader(f_in, dialect=dialect)
+        yield from reader
+
+
 def adapt_row(row, columns, i_dict):
     if row[columns[0]] not in i_dict:
         return False, False, False
@@ -55,9 +76,8 @@ def treat_annotation(an_files, columns, indices):
             i_dict[llist[1]] = llist[0]
 
     for file in an_files:
-        reader = csv.DictReader(open(file), delimiter="\t")
-        n = "_".join(file.split("-")[:2]).split("/")[1]
-        for row in reader:
+        n = file.split("/")[-1].split(".")[0]
+        for row in read_csv(file):
             d, nc, c = adapt_row(row, columns, i_dict)
             if d:
                 if n not in at_dict.keys():
@@ -80,7 +100,13 @@ def create_attributes_dict(an_files, columns, indices):
     return treat_annotation(files, columns, indices)
 
 
-def save_attributes(at_dict, columns):
+def search_output(k, output):
+    for o in output:
+        if k in o:
+            return o
+
+
+def save_attributes(at_dict, columns, outputs):
     """
     Saves attributes in a file
     """
@@ -89,7 +115,7 @@ def save_attributes(at_dict, columns):
         os.mkdir(path)
 
     for k, v in at_dict.items():
-        output = f"results/attributes/{k}.attributes"
+        output = search_output(k, outputs)
         with open(output, "w") as f:
             f.write(";".join(columns) + "\n")
             for k2, v2 in v.items():
@@ -108,7 +134,7 @@ def main():
         log.write("*** Getting Attributes from files ***\n")
         at_dict = create_attributes_dict(files, columns, indices)
         log.write("*** Saving Attributes ***\n")
-        save_attributes(at_dict, columns)
+        save_attributes(at_dict, columns, snakemake.output)
         e = time.time()
         log.write(f"Operations done in {round(e - s, 2)} seconds")
 
