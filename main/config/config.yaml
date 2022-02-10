@@ -1,4 +1,5 @@
 cluster:
+  mkdir -p logs/{rule} &&
   sbatch
     --partition={resources.partition}
     --cpus={resources.cpus}

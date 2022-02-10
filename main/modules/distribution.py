@@ -8,6 +8,9 @@ from collections import Counter
 
 
 def read_diamond_output(file):
+    """
+    Reads a Diamon output file
+    """
     file = str(file)
     fieldnames = ["qseqid", "qlen", "qstart", "qend", "sseqid", "slen", "sstart",
                   "send", "length", "pident", "ppos", "score", "evalue",
@@ -23,6 +26,9 @@ def read_diamond_output(file):
 
 
 def fill_value_dict(reader):
+    """
+    Fills a dict with values contained in the file
+    """
     values_dict = {"pident": [], "ppos": [], "evalue": []}
     for row in reader:
         for k, v in row.items():
@@ -34,6 +40,9 @@ def fill_value_dict(reader):
 
 
 def find_graph_file(outputs, key):
+    """
+    Finds the output graph file contained in a list of outputs
+    """
     d = {"pident" : "identity", "ppos" : "overlap", "evalue" : "evalue"}
     for k, v in d.items():
         if k == key:
@@ -43,12 +52,18 @@ def find_graph_file(outputs, key):
 
 
 def save_list_in_file(l, k):
+    """
+    Save a list in a file
+    """
     with open(f"{k}_values", "w") as f:
         for i in l:
             print(i, file=f)
 
 
 def get_eval(v):
+    """
+    Retrieves e values
+    """
     e_val = []
     for i in v:
         try:

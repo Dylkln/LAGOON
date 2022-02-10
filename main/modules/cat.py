@@ -4,6 +4,9 @@ from Bio import SeqIO
 
 
 def determine_file(file):
+    """
+    Checks if the file contains data or a list of path to files
+    """
     if type(file) != str:
         file = str(file)
     with open(file) as f:
@@ -12,6 +15,9 @@ def determine_file(file):
 
 
 def get_files_from_arg(file):
+    """
+    Retrieves a list of files
+    """
     if type(file) != str:
         file = str(file)
     files = []
@@ -23,7 +29,9 @@ def get_files_from_arg(file):
 
 
 def detect_files(files):
-
+    """
+    Checks if files is a file containing data or just containing path to other files
+    """
     fs = None
     for file in files:
         if determine_file(file):
@@ -36,9 +44,10 @@ def detect_files(files):
 
 
 def read_fasta_files(files, output):
-
+    """
+    Reads a fasta files and concatenate their content in a unique file
+    """
     i = 1
-
     with open(output[0], "w") as out:
         with open(output[1], "w") as index:
             for file in files:
@@ -46,11 +55,14 @@ def read_fasta_files(files, output):
                 name = "-".join(file.split("-")[1:2]).split("/")[-1]
                 name = name.replace("_", "-") + "-1"
                 for record in records:
-                    if "TRINITY" in record.id:
-                        record.id = record.id.replace("TRINITY", name.upper())
-                        record.description = record.description.replace("TRINITY", name.upper())
-                    record.id = record.id.replace("_", "-")
-                    record.description = record.description.replace("_", "-")
+                    if "METDB" in file:
+                        if "TRINITY" in record.id:
+                            record.id = record.id.replace("TRINITY", name.upper())
+                            record.description = record.description.replace("TRINITY", name.upper())
+                        record.id = record.id.replace("_", "-")
+                        record.description = record.description.replace("_", "-")
+                    if len(record.id.split("|")) > 1:
+                        record.id = record.id.split("|")[0]
                     index.write(f"{i}\t{record.id}\t{record.description}\n")
                     record.id = str(i)
                     record.description = ""
