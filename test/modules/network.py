@@ -99,6 +99,7 @@ def get_data_from_cc(g_cc, columns, out_files):
                 d[cc_n][j] = get_percent(fl)
                 d[cc_n]["homogeneity_score"] = get_homogeneity_score(fl_c)
             d[cc_n][j] = get_percent(cc.vs[j])
+            d[cc_n]["homogeneity_score_{j}"] = get_homogeneity_score(Counter(cc.vs[j]))
     save_data_dict(d, columns, out_files)
 
 

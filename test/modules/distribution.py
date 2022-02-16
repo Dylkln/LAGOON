@@ -9,7 +9,7 @@ from collections import Counter
 
 def read_diamond_output(file):
     """
-    Reads a Diamon output file
+    Reads a Diamond output file
     """
     file = str(file)
     fieldnames = ["qseqid", "qlen", "qstart", "qend", "sseqid", "slen", "sstart",
