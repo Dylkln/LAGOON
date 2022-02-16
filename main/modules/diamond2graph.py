@@ -1,11 +1,16 @@
 def read_file(file):
+    """
+    Reads a file and retrieves its content line by line
+    """
     with open(file, "r") as f:
         for line in f:
             yield line.strip()
 
 
 def diamond2graph(diamond_output):
-
+    """
+    Converts Diamond output into igraph-python input
+    """
     fieldnames = "from;to;query_length;subject_length;alignment_len;pident;evalue;bitscore"
     for file in diamond_output:
         ids = set()
@@ -33,14 +38,8 @@ def diamond2graph(diamond_output):
 
 
 def main():
-
     diamond2graph(snakemake.input)
 
-#    import subprocess
-#    from subprocess import DEVNULL
-#    for file in input:
-#        command = ["perl", "modules/diamond2graph.pl", "--input", file]
-#        subprocess.call(command, stdout=DEVNULL)
 
 if __name__ == '__main__':
     main()

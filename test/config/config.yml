@@ -1,6 +1,5 @@
 # ======================================== PREPROCESSING ========================================= #
 
-
 # Either a file containing all paths to fasta format file(s), or path(s) to fasta format file(s).
 # if several files are provided the program will concatenate all the files first.
 #fasta: tr/*
@@ -11,15 +10,15 @@ fasta: tr_files_test/*
 
 # The path of the file containing all sequences you need to treat. By default,
 # this file will be named "all_data.fasta".
-concat_file: results/all_data.fasta
+concat_file: all_data.fasta
 
 # The path of the diamond database format created by the command "makedb" of diamond-aligner
 # software. By default, this file will be named "all_data_db.dmnd".
-diamond_database: results/all_data_db.dmnd
+diamond_database: all_data_db.dmnd
 
 # The path of the diamond blatp file created by the command "blastp" of diamond-aligner software.
 # By default, this file will be named "diamond_ssn"
-diamond_blastp: results/diamond_ssn
+diamond_blastp: diamond_ssn
 
 # The name of the file containing the index associated with the sequence (to reduce memory usage).
 indices: seqname_index.indices
@@ -56,8 +55,6 @@ filtered_files:
 #annotation: an/*
 annotation: an_files_test/*
 
-# If you already have an attributes table, you can put the path to it here, else, leave blank
-attributes: 
 
 # Columns you want to keep in you sequence similarity network (please put them in the same order as
 # in your file)
@@ -80,6 +77,10 @@ columns:
   - peptides
   - length
   - database
+
+
+# If you already have an attributes table, you can put the path to it here, else, leave blank
+attributes:
 
 
 # ========================================== CONVERSION ========================================== #

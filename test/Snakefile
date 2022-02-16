@@ -10,17 +10,19 @@ def get_attrib_files(config):
     if len(files) == 1:
         f = []
         with open(files[0], "r") as fin:
+            if not os.path.exists(fin.readline()):
+                return [f.split("/")[-1].split(".")[0] for f in files]
             for line in fin:
                 f.append(line.strip())
-        return ["_".join(i.split("/")[-1].split("-")[:2]) for i in f]
-    return ["_".join(i.split("/")[-1].split("-")[:2]) for i in files]
+        return [i.split("/")[-1].split(".")[0] for i in f]
+    return [i.split("/")[-1].split(".")[0] for i in files]
 
 # ==================================== GET CONFIG / GET FILES ==================================== #
 
 FASTA = get_files(config["fasta"])
-CAT_F = config["concat_file"]
-DDB = config["diamond_database"]
-DBT = config["diamond_blastp"]
+CAT_F = f"results/{config["concat_file"]}"
+DDB = f"results/{config["diamond_database"]}"
+DBT = f"results/{config["diamond_blastp"]}"
 AN_F = get_files(config["annotation"])
 ATBT = config["attributes"]
 COL = config["columns"]
@@ -179,17 +181,18 @@ if FASTA:
                 l.write(f"Alignment done in {round(e - s,2)} seconds")
 
 # CREATE DISTRIBUTION GRAPHS
-rule distribution:
-    input:
-        DBT
-    output:
-        DISTRIB
-    log:
-        "logs/distribution.log"
-    benchmark:
-        "benchmarks/distribution.bench"
-    script:
-        "modules/distribution.py"
+if DISTRIB:
+    rule distribution:
+        input:
+            DBT
+        output:
+            DISTRIB
+        log:
+            "logs/distribution.log"
+        benchmark:
+            "benchmarks/distribution.bench"
+        script:
+            "modules/distribution.py"
 
 # FILTER THE DIAMOND BLASTP OUTPUT
 rule filter:

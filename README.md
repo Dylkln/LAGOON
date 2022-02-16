@@ -1,92 +1,18 @@
-## PROGRAM USED FOR THE STUDY OF TROPHIC MODES IN PROTISTS
+This Workflow is designed to treat large omics data. It has been made by the unit of environmental genomics of the Muséum National d'Histoire Naturelle based in Paris, FRANCE.
 
-## Prerequisites
+***
+## Documentation
 
-The use of [Miniconda3](https://docs.conda.io/en/latest/miniconda.html) is strongly recommended.
+The online documentation is located at the [Github Wiki](https://github.com/Dylkln/EGmnhn/wiki)
 
-### Miniconda Installation
+## Support
 
-> *Windows:* https://conda.io/projects/conda/en/latest/user-guide/install/windows.html
+If you have any questions, you can contact me by mail : klein.dylan@outlook.com
 
-> *MacOS:* https://conda.io/projects/conda/en/latest/user-guide/install/macos.html
+## Citation
 
-> *Linux:* https://conda.io/projects/conda/en/latest/user-guide/install/linux.html
+This workflow uses [Diamond](https://github.com/bbuchfink/diamond) and [Snakemake](https://snakemake.readthedocs.io/en/stable/) please cite both articles in your publication.
 
-### Diamond Installation
+Buchfink, B., Reuter, K. & Drost, HG. Sensitive protein alignments at tree-of-life scale using DIAMOND. Nat Methods 18, 366–368 (2021). https://doi.org/10.1038/s41592-021-01101-x
 
-This program uses [Diamond](https://github.com/bbuchfink/diamond), you can install it *via* conda:
-
-```
-conda install -c bioconda diamond
-```
-
-## Download the program
-
-1. Clone git repository
-
-> HTTPS link
-
-```
-git clone https://github.com/Dylkln/EGmnhn.git
-```
-
-> SSH link
-
-```
-git clone git@github.com:Dylkln/EGmnhn.git
-```
-
-2. Initialize conda environment using the file *environment.yml*
-
-```
-conda env create --file environment.yml
-```
-
-3. Activate conda environment
-
-```
-conda activate snkmk
-```
-
-## Usage
-
-This is a workflow using [Snakemake](https://snakemake.readthedocs.io/en/stable/).
-
-### Configuration
-
-You must complete the config file ***config.yml*** to launch every step you need.
-Leave a blank for any steps you don't want.
-
-
-### Utilisation
-
-You can familiarize yourself with the program using the test script.
-This script is located on EGmnhn/test. You must have at least 6GB of RAM to run the test.
-
-To use it, you can launch this command :
-
-```
-snakemake -c <NUMBER OF CORES>
-```
-
-OR
-
-```
-snakemake -c all
-```
-
-The first command asks snakemake to use a specific number of cores, the second asks to use all cores
-available
-
-If you use this command in the test repository, it will treat all test files (transdecoder and
-annotation), will filter the network keeping sequences with at least 80% overlap and with at least
-80% identity and an e-value < 1e-50. The column names used as attributes are "peptides", "length", and "database".
-
-### Data used by the program
-
-All you data must be standardized, please refer to the config.yml.
-
-Your Input must be a path to a fasta file or a file containing the list of path to fasta files.
-Annotation files must contain in the first column all **ID / Name** of sequences contained in fasta
-format files.
-The test data are part of a bigger dataset called [MetDB](http://metdb.sb-roscoff.fr/metdb/).
+Mölder F, Jablonski KP, Letcher B et al. Sustainable data analysis with Snakemake [version 1; peer review: 1 approved, 1 approved with reservations]. F1000Research 2021, 10:33 (https://doi.org/10.12688/f1000research.29032.1) 

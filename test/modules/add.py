@@ -90,14 +90,22 @@ def get_fname(names, files, i_dict):
         file : the file containing the attributes of the ORF ID
     """
     fn_dict = {}
+
     for n in names:
         iname = i_dict[str(n)]
-        for file in files:
-            if file not in fn_dict:
-                fn_dict[file] = set()
-            i = "_".join(iname.split("-")[:2])
-            if re.search(i, file):
+        if len(files) != 1:
+            for file in files:
+                if "METDB" in file.upper():
+                    if file not in fn_dict:
+                        fn_dict[file] = set()
+                    if re.search(iname, file):
+                        fn_dict[file].add(n)
+        else:
+            for file in files:
+                if file not in fn_dict:
+                    fn_dict[file] = set()
                 fn_dict[file].add(n)
+            
 
     return fn_dict
 
@@ -216,10 +224,10 @@ def main():
 
             for col, line in read_file(file):
                 if line not in name_set:
-                    name_set.add(int(line))
+                   name_set.add(int(line))
 
             fn_dict = get_fname(name_set, snakemake.input.attrib, i_dict)
-
+            print(fn_dict)
             for k, v in fn_dict.items():
                 rows = get_rows(v, k, snakemake.params.columns)
                 write_rows(writer, rows)

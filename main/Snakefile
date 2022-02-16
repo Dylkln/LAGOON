@@ -10,10 +10,12 @@ def get_attrib_files(config):
     if len(files) == 1:
         f = []
         with open(files[0], "r") as fin:
+            if not os.path.exists(fin.readline()):
+                return [f.split("/")[-1].split(".")[0] for f in files]
             for line in fin:
                 f.append(line.strip())
-        return ["_".join(i.split("/")[-1].split("-")[:2]) for i in f]
-    return ["_".join(i.split("/")[-1].split("-")[:2]) for i in files]
+        return [i.split("/")[-1].split(".")[0] for i in f]
+    return [i.split("/")[-1].split(".")[0] for i in files]
 
 # ==================================== GET CONFIG / GET FILES ==================================== #
 
@@ -77,6 +79,7 @@ COL_RESLTS = expand("results/{overlap}_{identity}_{eval}_ssn_{col}_results",
 
 # ================================================================================================ #
 
+# ALL RULES
 rule all:
     input:
         CAT_F,
@@ -94,6 +97,7 @@ rule all:
 
 
 if FASTA:
+    # CONCATENATE ALL FASTA FILES
     rule cat:
         input:
             FASTA
@@ -107,7 +111,7 @@ if FASTA:
         script:
             "modules/cat.py"
 
-
+    # CREATES A DIAMOND DATABASE
     rule diamond_db:
         input:
             CAT_F
@@ -137,7 +141,7 @@ if FASTA:
                 e = time.time()
                 l.write(f"Database created in {round(e - s,2)} seconds")
 
-
+    # Carries out a blastp
     rule diamond_blastp:
         input:
             db=DDB,
@@ -176,7 +180,7 @@ if FASTA:
                 e = time.time()
                 l.write(f"Alignment done in {round(e - s,2)} seconds")
 
-
+# CREATE DISTRIBUTION GRAPHS
 rule distribution:
     input:
         DBT
@@ -189,7 +193,7 @@ rule distribution:
     script:
         "modules/distribution.py"
 
-
+# FILTER THE DIAMOND BLASTP OUTPUT
 rule filter:
     input:
         DBT
@@ -209,6 +213,7 @@ rule filter:
 
 
 if config["conversion"]:
+    # CONVERT DIAMOND OUTPUT INTO IGRAPH-PYTHON INPUT
     rule diamond2graph:
         input:
             FILTR
@@ -222,7 +227,7 @@ if config["conversion"]:
         script:
             "modules/diamond2graph.py"
 
-
+# ASSOCIATE EVERY ATTRIBUTES OF A SEQUENCE ID
 rule attributes:
         input:
             an_files=AN_F,
@@ -240,6 +245,7 @@ rule attributes:
 
 
 if not config["attributes"]:
+    # ADDS ATTRIBUTES TO THE VERTEX FILE
     rule vertices:
         input:
             attrib=ATTRIB,
@@ -256,7 +262,7 @@ if not config["attributes"]:
         script:
             "modules/add.py"
 
-
+# CREATES A SEQUENCE SIMILARITY NETWORK AND EXTRACT RESULTS
 rule network:
     input:
         edges=EDGES,
