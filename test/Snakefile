@@ -12,17 +12,16 @@ def get_attrib_files(config):
         with open(files[0], "r") as fin:
             if not os.path.exists(fin.readline()):
                 return [f.split("/")[-1].split(".")[0] for f in files]
-            for line in fin:
-                f.append(line.strip())
+            f.extend(line.strip() for line in fin)
         return [i.split("/")[-1].split(".")[0] for i in f]
     return [i.split("/")[-1].split(".")[0] for i in files]
 
 # ==================================== GET CONFIG / GET FILES ==================================== #
 
 FASTA = get_files(config["fasta"])
-CAT_F = f"results/{config["concat_file"]}"
-DDB = f"results/{config["diamond_database"]}"
-DBT = f"results/{config["diamond_blastp"]}"
+CAT_F = f"results/{config['concat_file']}"
+DDB = f"results/{config['diamond_database']}"
+DBT = f"results/{config['diamond_blastp']}"
 AN_F = get_files(config["annotation"])
 ATBT = config["attributes"]
 COL = config["columns"]

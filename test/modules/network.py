@@ -78,6 +78,15 @@ def create_list_from_list_of_string(list_of_string):
     return l
 
 
+def standardize(data):
+
+    try:
+        return create_list_from_list_of_string(get_data_from_string(data))
+    except:
+        return data
+
+
+
 def get_data_from_cc(g_cc, columns, out_files):
     """
     Retrieves all wanted data from a connected component (CC)
@@ -93,13 +102,9 @@ def get_data_from_cc(g_cc, columns, out_files):
         cc_n = k + 1
         d[cc_n] = {}
         for j in columns:
-            if "database" in j:
-                fl = create_list_from_list_of_string(get_db_id(cc.vs[j]))
-                fl_c = Counter(fl)
-                d[cc_n][j] = get_percent(fl)
-                d[cc_n]["homogeneity_score"] = get_homogeneity_score(fl_c)
+            cc.vs[j] = standardize(cc.vs[j])
             d[cc_n][j] = get_percent(cc.vs[j])
-            d[cc_n]["homogeneity_score_{j}"] = get_homogeneity_score(Counter(cc.vs[j]))
+            d[cc_n][f"homogeneity_score_{j}"] = get_homogeneity_score(Counter(cc.vs[j]))
     save_data_dict(d, columns, out_files)
 
 
@@ -109,17 +114,22 @@ def find_output(c, outputs):
             return out
 
 
+def get_homogeneity_keys(v):
+    return [k for k in v.keys() if "homogeneity_score" in k]
+
+
 def save_data_dict(d, columns, outputs):
     d_h = {}
+    os_h = []
     for c in columns:
         o = find_output(c, outputs)
         tmp = []
         for k, v in d.items():
-            if v["homogeneity_score"]:
-                d_h[k] = v["homogeneity_score"]
-            for k2, v2 in v[c].items():
-                tmp.append([str(k), str(k2), str(v2)])
-
+            if "homogeneity_score" in v:
+                v_homog = get_homogeneity_keys(v)
+                for i in v_homog:
+                    d_h[k] = v[i]
+            tmp.extend([str(k), str(k2), str(v2)] for k2, v2 in v[c].items())
         with open(o, "w") as f:
             print(f"CC\t{c}\tPercentage", file=f)
             for i in tmp:
@@ -132,7 +142,7 @@ def save_data_dict(d, columns, outputs):
             print(f"{k}\t{v}", file=f)
 
 
-def get_db_id(l_o_l):
+def get_data_from_string(l_o_l):
     """
     Retrieves a list of all database ID contained
     in a list of long string of database ID
@@ -159,9 +169,7 @@ def get_db_id(l_o_l):
             l = str(l)
             sl = l.split("|")
 
-            for i in sl:
-                a.append(i)
-
+            a.extend(iter(sl))
     return a
 
 
@@ -211,7 +219,7 @@ def get_percent(l):
     for i in l:
         if type(i) == str:
             k = i.split(",")
-            sl = [j for j in k]
+            sl = list(k)
             for j in sl:
                 if j not in d.keys():
                     d[j] = 0
@@ -294,7 +302,7 @@ def main():
                         g.delete_vertices(to_del)
 
                     for index, i in enumerate(snakemake.params.columns):
-                        t = [j for j in nodes["name"]] if index == 0 else [j for j in nodes[i]]
+                        t = list(nodes["name"]) if index == 0 else list(nodes[i])
                         g.vs[i] = t
 
                     # decompose graph into subgraph
@@ -309,7 +317,11 @@ def main():
         for f in snakemake.params.similarity:
             g = ig.Graph.Read_GraphML(str(f))
             o = "_".join(f.split("_")[2:])
-            out_files = ["results/" + o + f"_ssn_{i}_results" for i in snakemake.params.columns]
+            out_files = [
+                f'results/{o}' + f"_ssn_{i}_results"
+                for i in snakemake.params.columns
+            ]
+
 
             if snakemake.params.isolated == "yes":
                 to_del = [v.index for v in g.vs if v.degree() == 0]

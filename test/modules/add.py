@@ -4,6 +4,7 @@ import re
 import csv
 import time
 
+
 # =============================================================================#
 
 
@@ -47,8 +48,7 @@ def read_csv(file):
     with open(file, "r") as f_in:
         dialect = csv.Sniffer().sniff(f_in.readline())
         f_in.seek(0)
-        reader = csv.DictReader(f_in, dialect=dialect)
-        yield from reader
+        yield from csv.DictReader(f_in, dialect=dialect)
 
 
 def get_files_from_argument(file):
@@ -68,9 +68,7 @@ def get_files_from_argument(file):
 
     files = []
     with open(file, "r") as f_in:
-        for line in f_in:
-            files.append(line.strip())
-
+        files.extend(line.strip() for line in f_in)
     return files
 
 
@@ -80,9 +78,9 @@ def get_fname(names, files, i_dict):
 
     Parameters
     ----------
-
-        n : an ORF ID
+        names :
         files : a list of filenames
+        i_dict :
 
     Returns
     -------
@@ -93,20 +91,18 @@ def get_fname(names, files, i_dict):
 
     for n in names:
         iname = i_dict[str(n)]
-        if len(files) != 1:
-            for file in files:
-                if "METDB" in file.upper():
-                    if file not in fn_dict:
-                        fn_dict[file] = set()
-                    if re.search(iname, file):
-                        fn_dict[file].add(n)
-        else:
-            for file in files:
+        for file in files:
+            if len(files) == 1:
                 if file not in fn_dict:
                     fn_dict[file] = set()
                 fn_dict[file].add(n)
-            
 
+            elif "METDB" in file.upper():
+                if file not in fn_dict:
+                    fn_dict[file] = set()
+                i = "_".join(iname.split("-")[:2])
+                if re.search(i, file):
+                    fn_dict[file].add(n)
     return fn_dict
 
 
@@ -139,8 +135,8 @@ def get_rows(indices, file, columns):
     Parameters
     ----------
 
+        indices :
         columns : columns names
-        nset : a set of ORF IDs
         file : the file where to search the ORFs
 
     Returns
@@ -224,10 +220,9 @@ def main():
 
             for col, line in read_file(file):
                 if line not in name_set:
-                   name_set.add(int(line))
+                    name_set.add(int(line))
 
             fn_dict = get_fname(name_set, snakemake.input.attrib, i_dict)
-            print(fn_dict)
             for k, v in fn_dict.items():
                 rows = get_rows(v, k, snakemake.params.columns)
                 write_rows(writer, rows)
