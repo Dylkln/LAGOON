@@ -111,35 +111,36 @@ def get_data_from_cc(g_cc, columns, out_files):
 def find_output(c, outputs):
     for out in outputs:
         if c in out:
-            return out
+            oh = "_".join(out.split("_")[:4])\
+                 + "_homogeneity_score_" + c + "_results"
+            return out, oh
 
 
-def get_homogeneity_keys(v):
-    return [k for k in v.keys() if "homogeneity_score" in k]
+def get_homogeneity_key(v, oh):
+    c = "_".join(oh.split("_")[4:7])
+    for k in v.keys():
+        if k == c:
+            return k
 
 
 def save_data_dict(d, columns, outputs):
-    d_h = {}
-    os_h = []
+
     for c in columns:
-        o = find_output(c, outputs)
+        o, oh = find_output(c, outputs)
         tmp = []
+        tmp_hom = []
         for k, v in d.items():
-            if "homogeneity_score" in v:
-                v_homog = get_homogeneity_keys(v)
-                for i in v_homog:
-                    d_h[k] = v[i]
+            v_homog = get_homogeneity_key(v, oh)
+            tmp_hom.append([str(k), str(v[v_homog])])
             tmp.extend([str(k), str(k2), str(v2)] for k2, v2 in v[c].items())
         with open(o, "w") as f:
             print(f"CC\t{c}\tPercentage", file=f)
             for i in tmp:
                 print("\t".join(i), file=f)
-
-    o_hs = "_".join(outputs[0].split("_")[:3]) + "_homogeneity_score"
-    with open(o_hs, "w") as f:
-        print("CC\tHomogeneity_score", file=f)
-        for k, v in d_h.items():
-            print(f"{k}\t{v}", file=f)
+        with open(oh, "w") as f:
+            print("CC\tHomogeneity_score", file=f)
+            for i in tmp_hom:
+                print("\t".join(i), file=f)
 
 
 def get_data_from_string(l_o_l):
@@ -291,7 +292,6 @@ def main():
                     # creates pandas dataframe of edges and nodes
                     edges = pd.read_csv(in_files[0], sep=";")
                     nodes = pd.read_csv(in_files[1], sep=";", low_memory=False)
-                    print(nodes)
 
                     # create an igraph Graph
                     g = ig.Graph.DataFrame(edges, directed=False)
