@@ -16,7 +16,7 @@ concat_file: all_data.fasta
 # software. By default, this file will be named "all_data_db.dmnd".
 diamond_database: all_data_db.dmnd
 
-# The path of the diamond blatp file created by the command "blastp" of diamond-aligner software.
+# The path of the diamond blastp file created by the command "blastp" of diamond-aligner software.
 # By default, this file will be named "diamond_ssn"
 diamond_blastp: diamond_ssn
 
@@ -70,7 +70,6 @@ annotation: an_files_test/*
 # the section "columns" of the config file should be like this :
 # columns:
 #   - peptides
-#   - length
 #   - database
 
 columns:
