@@ -8,4 +8,4 @@ source /shared/projects/bluecloud/input/trophomics_pipe/conda/env/trophomics/etc
 source activate trophomics
 
 
-srun snakemake --use-conda --cores 1 --profile profile/ -j=1
+srun snakemake -k --use-conda --cores 1 --profile profile/ -j=1
