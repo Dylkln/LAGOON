@@ -2,8 +2,8 @@
 
 # Either a file containing all paths to fasta format file(s), or path(s) to fasta format file(s).
 # if several files are provided the program will concatenate all the files first.
-#fasta: tr/*
-fasta: tr_files_test/*
+fasta: tr/*
+#fasta: tr_files_test/*
 
 # If you already have some files that you created before, and you wish them to be processed by the
 # workflow, you can put their names in the appropriate place in this config file.
@@ -16,7 +16,7 @@ concat_file: all_data.fasta
 # software. By default, this file will be named "all_data_db.dmnd".
 diamond_database: all_data_db.dmnd
 
-# The path of the diamond blatp file created by the command "blastp" of diamond-aligner software.
+# The path of the diamond blastp file created by the command "blastp" of diamond-aligner software.
 # By default, this file will be named "diamond_ssn"
 diamond_blastp: diamond_ssn
 
@@ -52,8 +52,8 @@ filtered_files:
 
 
 # File(s) containing the attributes associated to the sequences ID.
-#annotation: an/*
-annotation: an_files_test/*
+annotation: an/*
+#annotation: an_files_test/*
 
 
 # Columns you want to keep in you sequence similarity network (please put them in the same order as
@@ -70,12 +70,10 @@ annotation: an_files_test/*
 # the section "columns" of the config file should be like this :
 # columns:
 #   - peptides
-#   - length
 #   - database
 
 columns:
   - peptides
-  - length
   - database
 
 

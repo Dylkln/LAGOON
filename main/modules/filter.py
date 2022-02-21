@@ -1,8 +1,12 @@
+# =========================================== Modules ============================================ #
+
 import csv
 import io
 import gzip
 import time
 
+
+# ================================================================================================ #
 
 def percentage(part, whole):
     """
@@ -14,7 +18,7 @@ def percentage(part, whole):
 
 def get_eval(row):
     """
-    Retrieves the E-value
+    Retrieves the E-value exponent
     """
     e = row["evalue"]
     if e == "0.0":
@@ -87,7 +91,8 @@ def filter_file(identity, overlap, eval, ssn, log):
                 rm = al_ssn - al_filt
                 rmnb = nb_nssn - nb_nfilt
                 print(f"nb of alignments in base SSN : {al_ssn}", file=log)
-                print(f"nb of alignments in filtered SSN : {al_filt} ({percentage(al_filt, al_ssn)})",
+                print(f"nb of alignments in filtered SSN : "
+                      f"{al_filt} ({percentage(al_filt, al_ssn)})",
                       file=log)
                 print(f"nb of alignments removed : {rm} ({percentage(rm, al_ssn)})", file=log)
                 print(f"nb of nodes in base SSN : {nb_nssn}", file=log)
@@ -141,7 +146,9 @@ def save_stats(output, al_ssn, al_filt, nb_nssn, nb_nfilt):
 
 
 def main():
-
+    """
+    Main program function
+    """
     with open(str(snakemake.log), "w") as log:
         s = time.time()
         log.write("*** Filtering information provided ***\n")

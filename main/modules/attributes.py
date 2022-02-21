@@ -1,21 +1,15 @@
+# =========================================== Modules ============================================ #
+
 import os
 import csv
 import time
 
 
+# ================================================================================================ #
+
 def read_csv(file):
     """
     Reads a file as CSV
-
-    Parameters
-    ----------
-
-        file : a CSV file
-
-    Yields
-    -------
-
-        reader : a CSV.Dictreader object
     """
     with open(file, "r") as f_in:
         dialect = csv.Sniffer().sniff(f_in.readline())
@@ -25,6 +19,9 @@ def read_csv(file):
 
 
 def adapt_row(row, columns, i_dict):
+    """
+    Adapt incomplete row with columns header
+    """
     if row[columns[0]] not in i_dict:
         return False, False, False
     n = i_dict[row[columns[0]]]
@@ -101,6 +98,9 @@ def create_attributes_dict(an_files, columns, indices):
 
 
 def search_output(k, output):
+    """
+    Retrieves output corresponding to k
+    """
     for o in output:
         if k in o:
             return o
@@ -125,6 +125,9 @@ def save_attributes(at_dict, columns, outputs):
 
 
 def main():
+    """
+    Main program function
+    """
     with open(str(snakemake.log), "w") as log:
         s = time.time()
         log.write("*** Getting input files and parameters ***\n")

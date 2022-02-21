@@ -1,7 +1,12 @@
+# =========================================== Modules ============================================ #
+
 from collections import Counter
 import igraph as ig
 import pandas as pd
+import csv
 
+
+# ================================================================================================ #
 
 def percentage(part, whole):
     """
@@ -14,24 +19,14 @@ def percentage(part, whole):
 def db(string):
     """
     Retrieves the name of the database based on the string provided in argument
-
-    Parameters
-    ----------
-
-        string : a database ID
-
-    Returns
-    -------
-
-        k : the database associated to the database ID
     """
-    ll = [["PFAM", "PF"], ["SMART", "SM"], ["PROSITEPROFILES", "PS5"],
-          ["GENE3D", "G3DSA"], ["PROSITEPATTERNS", "PS0"], ["SUPERFAMILY", "SSF"],
-          ["CDD", "CD"], ["TIGRFAM", "TIGR"], ["PIRSF", "PIRSF"],
-          ["PRINTS", "PR"], ["HAMAP", "MF"], ["PRODOM", "PD"],
-          ["SFLD", "SFLD"], ["PANTHER", "PTHR"], ["NA", "NAN"]]
+    lst_of_lst = [["PFAM", "PF"], ["SMART", "SM"], ["PROSITEPROFILES", "PS5"],
+                  ["GENE3D", "G3DSA"], ["PROSITEPATTERNS", "PS0"], ["SUPERFAMILY", "SSF"],
+                  ["CDD", "CD"], ["TIGRFAM", "TIGR"], ["PIRSF", "PIRSF"],
+                  ["PRINTS", "PR"], ["HAMAP", "MF"], ["PRODOM", "PD"],
+                  ["SFLD", "SFLD"], ["PANTHER", "PTHR"], ["NA", "NAN"]]
 
-    d = {l[0]: l[1] for l in ll}
+    d = {lst[0]: lst[1] for lst in lst_of_lst}
     for k, v in d.items():
         if string.startswith(v):
             return k
@@ -40,16 +35,6 @@ def db(string):
 def get_cc_len(fn):
     """
     Retrieves the number of nodes contained in a CC
-
-    Parameters
-    ----------
-
-        fn : a dictionary containing all Databases in the CC
-
-    Returns
-    -------
-
-        cl : a dictionary containing all nodes number of each CC
     """
 
     l, cl = {}, {}
@@ -69,114 +54,92 @@ def create_list_from_list_of_string(list_of_string):
     """
     Transform a list of large string, into a list of strings
     """
-    l = []
+    lst = []
     for i in list_of_string:
         if ',' in i:
-            l.extend(i.split(","))
+            lst.extend(i.split(","))
         else:
-            l.append(i)
-    return l
+            lst.append(i)
+    return lst
 
 
-def get_data_from_cc(g_cc, columns, out_files):
+def standardize(data):
+    """
+    standardize the data
+    """
+    try:
+        return create_list_from_list_of_string(get_data_from_string(data))
+    except:
+        return data
+
+
+def get_data_from_cc(g_cc, columns, out_files, ov, ide, ev):
     """
     Retrieves all wanted data from a connected component (CC)
-
-    Parameters
-    ----------
-        g_cc : graph connected components
-        columns : column names
-        out_files : a list of output files
     """
     d = {}
     for k, cc in enumerate(g_cc):
         cc_n = k + 1
         d[cc_n] = {}
         for j in columns:
-            if "database" in j:
-                fl = create_list_from_list_of_string(get_db_id(cc.vs[j]))
-                fl_c = Counter(fl)
-                d[cc_n][j] = get_percent(fl)
-                d[cc_n]["homogeneity_score"] = get_homogeneity_score(fl_c)
+            cc.vs[j] = standardize(cc.vs[j])
             d[cc_n][j] = get_percent(cc.vs[j])
-    save_data_dict(d, columns, out_files)
+    save_data_dict(d, columns, out_files, ov, ide, ev)
 
 
-def find_output(c, outputs):
+def find_output(c, outputs, ov, ide, ev):
+    """
+    Retrieves the output file name based on column name, overlap, identity, and evalue parameters
+    """
+    if ov == -1 or ide == -1 or ev == -1:
+        for out in outputs:
+            if c in out:
+                return out
+
     for out in outputs:
-        if c in out:
+        if c in out and str(ov) in out and str(ide) in out and str(ev) in out:
             return out
 
 
-def save_data_dict(d, columns, outputs):
-    d_h = {}
+def save_data_dict(d, columns, outputs, ov, ide, ev):
+    """
+    Saves results in output files
+    """
     for c in columns:
-        o = find_output(c, outputs)
+        o = find_output(c, outputs, ov, ide, ev)
         tmp = []
         for k, v in d.items():
-            if v["homogeneity_score"]:
-                d_h[k] = v["homogeneity_score"]
-            for k2, v2 in v[c].items():
-                tmp.append([str(k), str(k2), str(v2)])
-
+            tmp.extend([str(k), str(k2), str(v2)] for k2, v2 in v[c].items())
         with open(o, "w") as f:
             print(f"CC\t{c}\tPercentage", file=f)
             for i in tmp:
                 print("\t".join(i), file=f)
 
-    o_hs = "_".join(outputs[0].split("_")[:3]) + "_homogeneity_score"
-    with open(o_hs, "w") as f:
-        print("CC\tHomogeneity_score", file=f)
-        for k, v in d_h.items():
-            print(f"{k}\t{v}", file=f)
 
-
-def get_db_id(l_o_l):
+def get_data_from_string(lst_of_lst):
     """
     Retrieves a list of all database ID contained
     in a list of long string of database ID
-
-    Parameters
-    ----------
-
-        l_o_l : a list of long string of database ID
-
-    Returns
-    -------
-
-        a : a list of all database ID contained in l_o_l
     """
 
     a = []
 
-    for l in l_o_l:
+    for lst in lst_of_lst:
 
-        if l == "nan":
+        if lst == "nan":
             a.append(l)
 
         else:
-            l = str(l)
-            sl = l.split("|")
+            lst = str(lst)
+            sl = lst.split("|")
 
-            for i in sl:
-                a.append(i)
-
+            a.extend(iter(sl))
     return a
 
 
 def get_homogeneity_score(d):
     """
     Retrieves a homogeneity score from a dictionary
-
-    Parameters
-    ----------
-
-        d : a dictionary containing values on databases
-
-    Returns
-    -------
-
-        hi : a dictionary containing the homogeneity score for each database
     """
 
     le = sum(v for k, v in d.items())
@@ -189,28 +152,17 @@ def get_homogeneity_score(d):
     return round(1 - (u / le), 3)
 
 
-def get_percent(l):
+def get_percent(lst):
     """
     Retrieves a percentage dictionary of all elements in a list
-
-    Parameters
-    ----------
-
-        l : a list of elements
-
-    Returns
-    -------
-
-        d_percent : a dictionary containing all percentages of each element of
-        the list given in argument
     """
     tot = 0
     d = {}
 
-    for i in l:
+    for i in lst:
         if type(i) == str:
             k = i.split(",")
-            sl = [j for j in k]
+            sl = list(k)
             for j in sl:
                 if j not in d.keys():
                     d[j] = 0
@@ -226,25 +178,124 @@ def get_percent(l):
     return {k: percentage(v, tot) for k, v in d.items()}
 
 
+def get_hom_score_data_from_cc(g_cc, columns, outputs, ov, ide, ev):
+    """
+    Gets a dictionary filled with homogeneity scores from CC
+    """
+    d = {}
+    for k, cc in enumerate(g_cc):
+        cc_n = k + 1
+        d[cc_n] = {
+            f"homogeneity_score_{j}": get_homogeneity_score(Counter(cc.vs[j]))
+            for j in columns
+        }
+
+    save_hom_score(d, columns, outputs, ov, ide, ev)
+
+
+def get_homogeneity_key(v, c):
+    """
+    Retrieves the key of a dict
+    """
+    for k in v.keys():
+        if c in k:
+            return k
+
+
+def save_hom_score(d, columns, outputs, ov, ide, ev):
+    """
+    Saves homogeneity scores in output files
+    """
+    for c in columns:
+        tmp_hom = []
+        out = find_output(c, outputs, ov, ide, ev)
+        for k, v in d.items():
+            v_homog = get_homogeneity_key(v, c)
+            tmp_hom.append([str(k), str(v[v_homog])])
+        with open(out, "w") as f:
+            print("CC\tHomogeneity_score", file=f)
+            for i in tmp_hom:
+                print("\t".join(i), file=f)
+
+
+def get_set_from_col(c, g_cc):
+    """
+    Gets a set of column names
+    """
+    set_l = set()
+    for cc in g_cc:
+        cc.vs[c] = standardize(cc.vs[c])
+        for d_col in cc.vs[c]:
+            if d_col not in set_l:
+                if c in ["name", "peptides"]:
+                    set_l.add(col.split(".")[0])
+                else:
+                    set_l.add(col)
+    return l
+
+
+def fill_abund_dict(d, g_cc, c):
+    """
+    Fills the abundance matrix
+    """
+    for index, cc in enumerate(g_cc):
+        cc.vs[c] = standardize(cc.vs[c])
+        d[index] = {'CC': index}
+        for d_col in cc.vs[c]:
+            if c in ["name", "peptides"]:
+                if d_col not in d:
+                    d[index][d_col.split(".")[0]] = 0
+                d[index][d_col.split(".")[0]] += 1
+            else:
+                if d_col not in d:
+                    d[index][d_col] = 0
+                d[index][d_col] += 1
+    return d
+
+
+def get_fieldnames(c, g_cc):
+    """
+    Retrieves the fieldnames of the output file
+    """
+    tmp = set()
+    for cc in g_cc:
+        cc.vs[c] = standardize(cc.vs[c])
+        for col in cc.vs[c]:
+            if col not in tmp:
+                if c in ["name", "peptides"]:
+                    tmp.add(col.split(".")[0])
+                else:
+                    tmp.add(col)
+
+    return ['CC', *[i for i in tmp]]
+
+
+def save_matrix(d, output, fieldnames):
+    """
+    Saves the abundance matrix in output file
+    """
+    writer = csv.DictWriter(open(output, "w"), fieldnames=fieldnames)
+    writer.writeheader()
+    for k, v in d.items():
+        writer.writerow(v)
+
+
+def get_abund_mat(g_cc, columns, outputs, ov, ide, ev):
+    """
+    Retrieves the abundance matrix and saves it in the output file
+    """
+    d = {}
+    for c in columns:
+        output = find_output(c, outputs, ov, ide, ev)
+        fieldnames = get_fieldnames(c, g_cc)
+        d = fill_abund_dict(d, g_cc, c)
+        save_matrix(d, output, fieldnames)
+
+
 def find_io(overlap, identity, e_val, edges, vertices, outputs):
     """
-    Retrieves the input and output files based on the overlap, the identity, and the e value given
-
-    Parameters
-    ----------
-
-        overlap : Overlap percentage
-        identity : Identity percentage
-        e_val : e value
-        edges : edges files
-        vertices : vertices files
-        outputs : a list of all outputs
-
-    returns
-    -------
-
-        in_files : input files
-        out_files : output files
+    Retrieves the input and output files based on the overlap, the identity, and the e value in
+    parameters
     """
     in_files, out_files = [], []
     length = len(edges)
@@ -277,12 +328,11 @@ def main():
             for ide in snakemake.params.identity:
                 for ev in snakemake.params.eval:
                     in_files, out_files = find_io(ov, ide, ev, snakemake.input.edges,
-                                                  snakemake.input.vertices, snakemake.output)
+                                                  snakemake.input.vertices, snakemake.output.rslts)
 
                     # creates pandas dataframe of edges and nodes
                     edges = pd.read_csv(in_files[0], sep=";")
                     nodes = pd.read_csv(in_files[1], sep=";", low_memory=False)
-                    print(nodes)
 
                     # create an igraph Graph
                     g = ig.Graph.DataFrame(edges, directed=False)
@@ -293,22 +343,37 @@ def main():
                         g.delete_vertices(to_del)
 
                     for index, i in enumerate(snakemake.params.columns):
-                        t = [j for j in nodes["name"]] if index == 0 else [j for j in nodes[i]]
+                        t = list(nodes["name"]) if index == 0 else list(nodes[i])
                         g.vs[i] = t
 
                     # decompose graph into subgraph
                     g_cc = g.decompose(minelements=snakemake.params.neighbours)
 
-                    # get a dictionary containing all data from CC
-                    get_data_from_cc(g_cc, snakemake.params.columns, out_files)
+                    # get a dictionary containing all data from CC and save it
+                    get_data_from_cc(g_cc, snakemake.params.columns, out_files, ov, ide, ev)
+
+                    # get homogeneity score from each CC
+                    get_hom_score_data_from_cc(g_cc, snakemake.params.columns,
+                                               snakemake.output.homscore, ov, ide, ev)
+
+                    # get an abundance matrix from CC and save it
+                    get_abund_mat(g_cc, snakemake.params.columns, snakemake.output.abund_mat,
+                                  ov, ide, ev)
 
                     ig.Graph.write_graphml(g, f"results/ssn_graph_{ov}_{ide}_{ev}")
 
     else:
+        ov, ide, ev = -1, -1, -1
         for f in snakemake.params.similarity:
             g = ig.Graph.Read_GraphML(str(f))
-            o = "_".join(f.split("_")[2:])
-            out_files = ["results/" + o + f"_ssn_{i}_results" for i in snakemake.params.columns]
+            out_files = [f"results/{f.split('/')[-1]}_{c}_results"
+                         for c in snakemake.params.columns]
+
+            hom_score_files = [f"results/{f.split('/')[-1]}_{c}_homogeneity_score"
+                               for c in snakemake.params.columns]
+
+            abund_mat_files = [f"results/{f.split('/')[-1]}_{c}_abundance_matrix"
+                               for c in snakemake.params.columns]
 
             if snakemake.params.isolated == "yes":
                 to_del = [v.index for v in g.vs if v.degree() == 0]
@@ -318,7 +383,15 @@ def main():
             g_cc = g.decompose(minelements=snakemake.params.neighbours)
 
             # get a dictionary containing all data from CC
-            get_data_from_cc(g_cc, snakemake.params.columns, out_files)
+            get_data_from_cc(g_cc, snakemake.params.columns, out_files, ov, ide, ev)
+
+            # get homogeneity score from each CC
+            get_hom_score_data_from_cc(g_cc, snakemake.params.columns,
+                                       hom_score_files, ov, ide, ev)
+
+            # get an abundance matrix from CC and save it
+            get_abund_mat(g_cc, snakemake.params.columns, abund_mat_files,
+                          ov, ide, ev)
 
 
 if __name__ == '__main__':

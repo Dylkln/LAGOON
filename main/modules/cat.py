@@ -1,7 +1,11 @@
+# =========================================== Modules ============================================ #
+
 import os
 import time
 from Bio import SeqIO
 
+
+# ================================================================================================ #
 
 def determine_file(file):
     """
@@ -71,6 +75,9 @@ def read_fasta_files(files, output):
 
 
 def main():
+    """
+    Main program function
+    """
     with open(str(snakemake.log), "w") as log:
         s = time.time()
         log.write("*** Getting input and output files ***\n")

@@ -1,3 +1,5 @@
+# =========================================== Modules ============================================ #
+
 import csv
 import io
 import gzip
@@ -7,9 +9,11 @@ import matplotlib.pyplot as plt
 from collections import Counter
 
 
+# ================================================================================================ #
+
 def read_diamond_output(file):
     """
-    Reads a Diamon output file
+    Reads a Diamond output file
     """
     file = str(file)
     fieldnames = ["qseqid", "qlen", "qstart", "qend", "sseqid", "slen", "sstart",
@@ -43,7 +47,7 @@ def find_graph_file(outputs, key):
     """
     Finds the output graph file contained in a list of outputs
     """
-    d = {"pident" : "identity", "ppos" : "overlap", "evalue" : "evalue"}
+    d = {"pident": "identity", "ppos": "overlap", "evalue": "evalue"}
     for k, v in d.items():
         if k == key:
             for file in outputs:
@@ -51,12 +55,12 @@ def find_graph_file(outputs, key):
                     return file
 
 
-def save_list_in_file(l, k):
+def save_list_in_file(lst, k):
     """
     Save a list in a file
     """
     with open(f"{k}_values", "w") as f:
-        for i in l:
+        for i in lst:
             print(i, file=f)
 
 
@@ -74,6 +78,9 @@ def get_eval(v):
 
 
 def main():
+    """
+    Main program function
+    """
     with open(str(snakemake.log), "w") as log:
         s = time.time()
         log.write("*** Getting values from alignments ***\n")
@@ -91,6 +98,7 @@ def main():
             plt.savefig(tmp)
         e = time.time()
         log.write(f"Operations done in {round(e - s, 2)} seconds")
+
 
 if __name__ == '__main__':
     main()
