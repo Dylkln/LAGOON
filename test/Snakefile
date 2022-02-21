@@ -76,6 +76,19 @@ COL_RESLTS = expand("results/{overlap}_{identity}_{eval}_ssn_{col}_results",
                 eval=EVAL,
                 col=COL)
 
+HOM_SCORE = expand("results/{overlap}_{identity}_{eval}_{col}_homogeneity_score",
+                overlap=PCOV,
+                identity=PIDENT,
+                eval=EVAL,
+                col=COL)
+
+ABUND_MAT = expand("results/{overlap}_{identity}_{eval}_{col}_abundance_matrix",
+                overlap=PCOV,
+                identity=PIDENT,
+                eval=EVAL,
+                col=COL)
+
+
 # ================================================================================================ #
 
 # ALL RULES
@@ -268,7 +281,9 @@ rule network:
         edges=EDGES,
         vertices=VER_ATTRIB
     output:
-        COL_RESLTS
+        rslts = COL_RESLTS,
+        homscore = HOM_SCORE,
+        abund_mat = ABUND_MAT
     log:
         "logs/network.log"
     benchmark:
@@ -280,6 +295,7 @@ rule network:
         similarity=NET_F,
         overlap=PCOV,
         identity=PIDENT,
-        eval=EVAL
+        eval=EVAL,
+        indices=IDX
     script:
         "modules/network.py"

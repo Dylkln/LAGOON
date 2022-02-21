@@ -1,27 +1,16 @@
-# ================================== Modules ==================================#
+# =========================================== Modules ============================================ #
 
 import re
 import csv
 import time
 
 
-# =============================================================================#
+# ================================================================================================ #
 
 
 def read_file(file):
     """
-    Reads a CSV file with a comma delimiter
-
-    Parameters
-    ----------
-
-        file : a CSV file
-
-    Yields
-    -------
-
-        row : a row of the CSV file
-        col : the fieldnames of the file
+    Reads a file and retrieves the column names and the line
     """
 
     with open(file, "r") as f_in:
@@ -34,16 +23,6 @@ def read_file(file):
 def read_csv(file):
     """
     Reads a file as CSV
-
-    Parameters
-    ----------
-
-        file : a CSV file
-
-    Yields
-    -------
-
-        reader : a CSV.Dictreader object
     """
     with open(file, "r") as f_in:
         dialect = csv.Sniffer().sniff(f_in.readline())
@@ -54,16 +33,6 @@ def read_csv(file):
 def get_files_from_argument(file):
     """
     Retrieves a list of filenames
-
-    Parameters
-    ----------
-
-        file : a file given with the argument -f
-
-    Returns
-    -------
-
-        files : a list of files contained in the file
     """
 
     files = []
@@ -75,17 +44,6 @@ def get_files_from_argument(file):
 def get_fname(names, files, i_dict):
     """
     Retrieves the file name containing the attributes of an ORF ID
-
-    Parameters
-    ----------
-        names :
-        files : a list of filenames
-        i_dict :
-
-    Returns
-    -------
-
-        file : the file containing the attributes of the ORF ID
     """
     fn_dict = {}
 
@@ -109,16 +67,6 @@ def get_fname(names, files, i_dict):
 def get_prefix(n):
     """
     Retrieves the ORF prefix based on an ORF ID
-
-    Parameters
-    ----------
-
-        n : an ORF ID
-
-    Returns
-    -------
-
-        an ORF ID prefix
     """
 
     pr = n.replace("-", ".").split(".")[:5]
@@ -131,18 +79,6 @@ def get_prefix(n):
 def get_rows(indices, file, columns):
     """
     Retrieves a list of rows containing the ORF name, prefix and attributes
-
-    Parameters
-    ----------
-
-        indices :
-        columns : columns names
-        file : the file where to search the ORFs
-
-    Returns
-    -------
-
-        rlist : a list of rows
     """
 
     rlist = []
@@ -159,12 +95,6 @@ def get_rows(indices, file, columns):
 def write_rows(writer, rows):
     """
     Writes all rows contained in a list of rows in a file
-
-    Parameters
-    ----------
-
-        writer : a csv.DictWriter
-        rows : a list of rows
     """
 
     for row in rows:
@@ -174,17 +104,6 @@ def write_rows(writer, rows):
 def find_output(file, outputs):
     """
     Retrieves the name of the file needed in a list of files
-
-    Parameters
-    ----------
-
-        file : a file to search for
-        outputs: a list of files
-
-    Returns
-    -------
-
-        f : a file name
     """
     for f in outputs:
         name = file.split(".")[0]
@@ -193,6 +112,9 @@ def find_output(file, outputs):
 
 
 def main():
+    """
+    Main program function
+    """
     # Opens Log file
     with open(str(snakemake.log), "w") as log:
         s = time.time()

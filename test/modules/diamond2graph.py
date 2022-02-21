@@ -38,6 +38,9 @@ def diamond2graph(diamond_output):
 
 
 def main():
+    """
+    Main program function
+    """
     diamond2graph(snakemake.input)
 
 
