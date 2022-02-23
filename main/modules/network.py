@@ -234,7 +234,7 @@ def get_set_from_col(c, g_cc):
     return l
 
 
-def fill_abund_dict(d, g_cc, c):
+def fill_abund_dict(d, g_cc, c, ind):
     """
     Fills the abundance matrix
     """
@@ -243,9 +243,16 @@ def fill_abund_dict(d, g_cc, c):
         d[index] = {'CC': index}
         for d_col in cc.vs[c]:
             if c in ["name", "peptides"]:
-                if d_col not in d:
-                    d[index][d_col.split(".")[0]] = 0
-                d[index][d_col.split(".")[0]] += 1
+                col = d_col.split(".")[0]
+                if "METDB" in ind[col]:
+                    met_col = "-".join(ind[col].split("-")[:2])
+                    if met_col not in d:
+                        d[index][met_col] = 0
+                    d[index][met_col] += 1
+                else:
+                    if ind[col] not in d:
+                        d[index][ind[col]] = 0
+                    d[index][ind[col]] += 1
             else:
                 if d_col not in d:
                     d[index][d_col] = 0
@@ -253,7 +260,16 @@ def fill_abund_dict(d, g_cc, c):
     return d
 
 
-def get_fieldnames(c, g_cc):
+def get_indices(indices):
+    ind = {}
+    with open(indices, "r") as f:
+        for line in f:
+            li = line.split("\t")[:2]
+            ind[li[0]] = li[1]
+    return ind
+
+
+def get_fieldnames(c, g_cc, indices):
     """
     Retrieves the fieldnames of the output file
     """
@@ -263,7 +279,10 @@ def get_fieldnames(c, g_cc):
         for col in cc.vs[c]:
             if col not in tmp:
                 if c in ["name", "peptides"]:
-                    tmp.add(col.split(".")[0])
+                    if "METDB" in indices[col]:
+                        tmp.add("-".join(indices[col].split("-")[:2]))
+                    else:
+                        tmp.add(indices[col].split(".")[0])
                 else:
                     tmp.add(col)
 
@@ -280,15 +299,16 @@ def save_matrix(d, output, fieldnames):
         writer.writerow(v)
 
 
-def get_abund_mat(g_cc, columns, outputs, ov, ide, ev):
+def get_abund_mat(g_cc, columns, outputs, ov, ide, ev, indices):
     """
     Retrieves the abundance matrix and saves it in the output file
     """
     d = {}
     for c in columns:
+        ind = get_indices(indices)
         output = find_output(c, outputs, ov, ide, ev)
-        fieldnames = get_fieldnames(c, g_cc)
-        d = fill_abund_dict(d, g_cc, c)
+        fieldnames = get_fieldnames(c, g_cc, ind)
+        d = fill_abund_dict(d, g_cc, c, ind)
         save_matrix(d, output, fieldnames)
 
 
@@ -358,7 +378,7 @@ def main():
 
                     # get an abundance matrix from CC and save it
                     get_abund_mat(g_cc, snakemake.params.columns, snakemake.output.abund_mat,
-                                  ov, ide, ev)
+                                  ov, ide, ev, snakemake.params.indices)
 
                     ig.Graph.write_graphml(g, f"results/ssn_graph_{ov}_{ide}_{ev}")
 
@@ -391,7 +411,7 @@ def main():
 
             # get an abundance matrix from CC and save it
             get_abund_mat(g_cc, snakemake.params.columns, abund_mat_files,
-                          ov, ide, ev)
+                          ov, ide, ev, snakemake.params.indices)
 
 
 if __name__ == '__main__':
