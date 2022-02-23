@@ -12,8 +12,7 @@ def get_attrib_files(config):
         with open(files[0], "r") as fin:
             if not os.path.exists(fin.readline()):
                 return [f.split("/")[-1].split(".")[0] for f in files]
-            for line in fin:
-                f.append(line.strip())
+            f.extend(line.strip() for line in fin)
         return [i.split("/")[-1].split(".")[0] for i in f]
     return [i.split("/")[-1].split(".")[0] for i in files]
 
@@ -76,6 +75,19 @@ COL_RESLTS = expand("results/{overlap}_{identity}_{eval}_ssn_{col}_results",
                 identity=PIDENT,
                 eval=EVAL,
                 col=COL)
+
+HOM_SCORE = expand("results/{overlap}_{identity}_{eval}_{col}_homogeneity_score",
+                overlap=PCOV,
+                identity=PIDENT,
+                eval=EVAL,
+                col=COL)
+
+ABUND_MAT = expand("results/{overlap}_{identity}_{eval}_{col}_abundance_matrix",
+                overlap=PCOV,
+                identity=PIDENT,
+                eval=EVAL,
+                col=COL)
+
 
 # ================================================================================================ #
 
@@ -181,17 +193,18 @@ if FASTA:
                 l.write(f"Alignment done in {round(e - s,2)} seconds")
 
 # CREATE DISTRIBUTION GRAPHS
-rule distribution:
-    input:
-        DBT
-    output:
-        DISTRIB
-    log:
-        "logs/distribution.log"
-    benchmark:
-        "benchmarks/distribution.bench"
-    script:
-        "modules/distribution.py"
+if DISTRIB:
+    rule distribution:
+        input:
+            DBT
+        output:
+            DISTRIB
+        log:
+            "logs/distribution.log"
+        benchmark:
+            "benchmarks/distribution.bench"
+        script:
+            "modules/distribution.py"
 
 # FILTER THE DIAMOND BLASTP OUTPUT
 rule filter:
@@ -268,7 +281,9 @@ rule network:
         edges=EDGES,
         vertices=VER_ATTRIB
     output:
-        COL_RESLTS
+        rslts = COL_RESLTS,
+        homscore = HOM_SCORE,
+        abund_mat = ABUND_MAT
     log:
         "logs/network.log"
     benchmark:
@@ -280,6 +295,7 @@ rule network:
         similarity=NET_F,
         overlap=PCOV,
         identity=PIDENT,
-        eval=EVAL
+        eval=EVAL,
+        indices=IDX
     script:
         "modules/network.py"
