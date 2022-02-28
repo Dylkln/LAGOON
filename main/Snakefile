@@ -161,7 +161,7 @@ if FASTA:
         output:
             DBT
         log:
-            "logs/diamond_blatp.log"
+            "logs/diamond_blastp.log"
         benchmark:
             "benchmarks/diamond_blatp.bench"
         run:
