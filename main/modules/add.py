@@ -58,8 +58,8 @@ def get_fname(names, files, i_dict):
             elif "METDB" in file.upper():
                 if file not in fn_dict:
                     fn_dict[file] = set()
-                i = "_".join(iname.split("-")[:2])
-                if re.search(i, file):
+                i = iname.split("-")[:2]
+                if i[0] in file and i[1] in file:
                     fn_dict[file].add(n)
     return fn_dict
 
