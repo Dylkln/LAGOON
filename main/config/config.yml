@@ -3,7 +3,6 @@
 # Either a file containing all paths to fasta format file(s), or path(s) to fasta format file(s).
 # if several files are provided the program will concatenate all the files first.
 fasta: tr/*
-#fasta: tr_files_test/*
 
 # If you already have some files that you created before, and you wish them to be processed by the
 # workflow, you can put their names in the appropriate place in this config file.
@@ -53,7 +52,6 @@ filtered_files:
 
 # File(s) containing the attributes associated to the sequences ID.
 annotation: an/*
-#annotation: an_files_test/*
 
 
 # Columns you want to keep in you sequence similarity network (please put them in the same order as
@@ -74,7 +72,6 @@ annotation: an/*
 
 columns:
   - peptides
-  - database
 
 
 # If you already have an attributes table, you can put the path to it here, else, leave blank

@@ -74,7 +74,8 @@ annotation: an_files_test/*
 
 columns:
   - peptides
-  - database
+  - trophy
+  - Phylum_Metdb
 
 
 # If you already have an attributes table, you can put the path to it here, else, leave blank
