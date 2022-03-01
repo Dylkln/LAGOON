@@ -12,9 +12,7 @@ def read_csv(file):
     Reads a file as CSV
     """
     with open(file, "r") as f_in:
-        dialect = csv.Sniffer().sniff(f_in.readline())
-        f_in.seek(0)
-        reader = csv.DictReader(f_in, dialect=dialect)
+        reader = csv.DictReader(f_in, delimiter="\t")
         yield from reader
 
 
@@ -22,6 +20,7 @@ def adapt_row(row, columns, i_dict):
     """
     Adapt incomplete row with columns header
     """
+
     if row[columns[0]] not in i_dict:
         return False, False, False
     n = i_dict[row[columns[0]]]
@@ -106,6 +105,18 @@ def search_output(k, output):
             return o
 
 
+def fill_tmp_dict(k, v, columns):
+    d = {}
+    for key, val in v.items():
+        val = "".join(val) if len(val) == 1 else ",".join(val)
+        d[key] = val
+
+    for c in columns:
+        if c not in d.keys() and k not in d.values():
+            d[c] = k
+    return d
+
+
 def save_attributes(at_dict, columns, outputs):
     """
     Saves attributes in a file
@@ -117,11 +128,11 @@ def save_attributes(at_dict, columns, outputs):
     for k, v in at_dict.items():
         output = search_output(k, outputs)
         with open(output, "w") as f:
-            f.write(";".join(columns) + "\n")
+            writer = csv.DictWriter(f, delimiter=";", fieldnames=columns)
+            writer.writeheader()
             for k2, v2 in v.items():
-                lwrite = [i for i in v2.values()]
-                lwrite = ";".join(",".join(i) for i in lwrite)
-                f.write(f"{k2};{lwrite}\n")
+                tmp = fill_tmp_dict(k2, v2, columns)
+                writer.writerow(tmp)
 
 
 def main():
