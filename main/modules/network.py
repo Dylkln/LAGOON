@@ -293,7 +293,7 @@ def save_matrix(d, output, fieldnames):
     """
     Saves the abundance matrix in output file
     """
-    writer = csv.DictWriter(open(output, "w"), fieldnames=fieldnames)
+    writer = csv.DictWriter(open(output, "w"), fieldnames=fieldnames, delimiter = "\t")
     writer.writeheader()
     for k, v in d.items():
         writer.writerow(v)
