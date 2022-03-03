@@ -74,7 +74,7 @@ annotation: an_files_test/*
 
 columns:
   - peptides
-  - trophy
+  - trophic_mode
   - Phylum_Metdb
 
 
