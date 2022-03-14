@@ -209,6 +209,7 @@ def save_hom_score(d, columns, outputs, ov, ide, ev):
     for c in columns:
         tmp_hom = []
         out = find_output(c, outputs, ov, ide, ev)
+        outputs.remove(out)
         for k, v in d.items():
             v_homog = get_homogeneity_key(v, c)
             tmp_hom.append([str(k), str(v[v_homog])])
@@ -293,7 +294,7 @@ def save_matrix(d, output, fieldnames):
     """
     Saves the abundance matrix in output file
     """
-    writer = csv.DictWriter(open(output, "w"), fieldnames=fieldnames, delimiter = "\t")
+    writer = csv.DictWriter(open(output, "w"), fieldnames=fieldnames, delimiter="\t")
     writer.writeheader()
     for k, v in d.items():
         writer.writerow(v)
@@ -306,10 +307,11 @@ def get_abund_mat(g_cc, columns, outputs, ov, ide, ev, indices):
     d = {}
     for c in columns:
         ind = get_indices(indices)
-        output = find_output(c, outputs, ov, ide, ev)
+        out = find_output(c, outputs, ov, ide, ev)
+        outputs.remove(out)
         fieldnames = get_fieldnames(c, g_cc, ind)
         d = fill_abund_dict(d, g_cc, c, ind)
-        save_matrix(d, output, fieldnames)
+        save_matrix(d, out, fieldnames)
 
 
 def find_io(overlap, identity, e_val, edges, vertices, outputs):
