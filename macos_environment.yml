@@ -1,4 +1,4 @@
-name: snkmk
+name: netaps
 channels:
   - bioconda
   - conda-forge
