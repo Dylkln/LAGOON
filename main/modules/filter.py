@@ -41,8 +41,8 @@ def filter(inputfile, outputfile, cov, ident, eval):
 
     if inputfile.endswith(".gz"):
         i = gzip.open(inputfile, mode="rt")
-        f = io.TextIOWrapper(i, encoding="utf-8")
-        reader = csv.DictReader(f, delimiter="\t",
+#        f = io.TextIOWrapper(i, encoding="utf-8")
+        reader = csv.DictReader(i, delimiter="\t",
                                 fieldnames=fieldnames)
     else:
         reader = csv.DictReader(open(inputfile), delimiter="\t",
@@ -77,16 +77,18 @@ def filter(inputfile, outputfile, cov, ident, eval):
     return al_ssn, al_filt, nb_nssn, nb_nfilt
 
 
-def filter_file(identity, overlap, eval, ssn, log):
+def filter_file(identity, overlap, eval, ssn, log, filtr, stats):
     """
     Filters the File
     """
+
     for i in identity:
         for j in overlap:
             for h in eval:
                 print("*** FILTERING FILE ***", file=log)
                 print(f"filtering infos ||| coverage : {j}%, identity : {i}%, eval : {h}", file=log)
-                output = f"{ssn}_{int(j)}_{int(i)}_{h}"
+                output = filtr[0]
+                filtr.remove(output)
                 al_ssn, al_filt, nb_nssn, nb_nfilt = filter(ssn, output, j, i, h)
                 rm = al_ssn - al_filt
                 rmnb = nb_nssn - nb_nfilt
@@ -100,7 +102,8 @@ def filter_file(identity, overlap, eval, ssn, log):
                       file=log)
                 print(f"nb of nodes removed : {rmnb} ({percentage(rmnb, nb_nssn)})", file=log)
                 print("*** Saving Stats ***\n", file=log)
-                output_stats = f"{output}_stats"
+                output_stats = stats[0]
+                stats.remove(output_stats)
                 save_stats(output_stats, al_ssn, al_filt, nb_nssn, nb_nfilt)
 
 
@@ -155,7 +158,9 @@ def main():
         filter_file(snakemake.params.identity,
                     snakemake.params.overlap,
                     snakemake.params.evalue,
-                    str(snakemake.input), log)
+                    str(snakemake.input), log,
+                    snakemake.output.filtr,
+                    snakemake.output.stats)
         e = time.time()
         log.write(f"Operations done in {round(e - s, 2)} seconds")
 
