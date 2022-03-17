@@ -1,4 +1,4 @@
-This Workflow is designed to treat large omics data. It has been made by the unit of environmental genomics of the Muséum National d'Histoire Naturelle based in Paris, FRANCE.
+NETwork tool for Analysing Protein Sequences (NETAPS) is designed to treat large omics data. It has been made by the unit of environmental genomics of the Muséum National d'Histoire Naturelle based in Paris, FRANCE.
 
 ***
 ## Documentation
