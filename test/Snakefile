@@ -18,9 +18,15 @@ def get_attrib_files(config):
 
 # ==================================== GET CONFIG / GET FILES ==================================== #
 
-FASTA = get_files(config["fasta"])
-CAT_F = f"results/{config['concat_file']}"
-DDB = f"results/{config['diamond_database']}"
+try:
+    FASTA = get_files(config["fasta"])
+    CAT_F = f"results/{config['concat_file']}"
+    DDB = f"results/{config['diamond_database']}"
+except:
+    FASTA = ""
+    CAT_F = ""
+    DDB = ""
+
 DBT = f"results/{config['diamond_blastp']}"
 AN_F = get_files(config["annotation"])
 ATBT = config["attributes"]
@@ -215,8 +221,8 @@ rule filter:
         identity=PIDENT,
         evalue=EVAL
     output:
-        FILTR,
-        FILTR_S
+        filtr=FILTR,
+        stats=FILTR_S
     log:
         "logs/filter.log"
     benchmark:
