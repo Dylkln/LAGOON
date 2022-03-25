@@ -1,9 +1,9 @@
-NETwork tool for Analysing Protein Sequences (NETAPS) is designed to treat large omics data. It has been made by the unit of environmental genomics of the Muséum National d'Histoire Naturelle based in Paris, FRANCE.
+LArGe cOmparative Omics Networks (LAGOON) is designed to treat large omics data. It has been made by the unit of environmental genomics of the Muséum National d'Histoire Naturelle based in Paris, FRANCE.
 
 ***
 ## Documentation
 
-The online documentation is located at the [Github Wiki](https://github.com/Dylkln/EGmnhn/wiki)
+The online documentation is located at the [Github Wiki](https://github.com/Dylkln/LAGOON/wiki)
 
 ## Support
 
