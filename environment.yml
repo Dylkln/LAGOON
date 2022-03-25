@@ -1,4 +1,4 @@
-name: netaps
+name: lagoon
 channels:
   - bioconda
   - conda-forge

@@ -20,7 +20,10 @@ def get_eval(row):
     """
     Retrieves the E-value exponent
     """
-    e = row["evalue"]
+    if type(row) == dict:
+        e = row["evalue"]
+    else:
+        e = row
     if e == "0.0":
         return 0
     return int(e.split("e")[1])
@@ -33,6 +36,7 @@ def filter(inputfile, outputfile, cov, ident, eval):
     al_ssn, al_filt, nb_nssn, nb_nfilt = 0, 0, 0, 0
     n_ssn = set()
     n_filt = set()
+    snu = set()
     ev = int(eval.split("e")[1])
 
     fieldnames = ["qseqid", "qlen", "qstart", "qend", "sseqid", "slen",
@@ -41,7 +45,6 @@ def filter(inputfile, outputfile, cov, ident, eval):
 
     if inputfile.endswith(".gz"):
         i = gzip.open(inputfile, mode="rt")
-#        f = io.TextIOWrapper(i, encoding="utf-8")
         reader = csv.DictReader(i, delimiter="\t",
                                 fieldnames=fieldnames)
     else:
@@ -56,6 +59,9 @@ def filter(inputfile, outputfile, cov, ident, eval):
         al_ssn += 1
         n = [row["qseqid"], row["sseqid"]]
         e_row = get_eval(row)
+        ns = sorted(n)
+        nu = ns[0]+"="+ns[1]
+
         if n[0] not in n_ssn:
             n_ssn.add(n[0])
             nb_nssn += 1
@@ -63,13 +69,15 @@ def filter(inputfile, outputfile, cov, ident, eval):
         if (
                 row["pident"]
                 and row["ppos"]
-                and e_row >= ev
+                and e_row <= ev
                 and float(row["pident"]) >= ident
                 and float(row["ppos"]) >= cov
                 and n[0] != n[1]
+                and nu not in snu
         ):
             writer.writerow(row)
             al_filt += 1
+            snu.add(nu)
             if n[0] not in n_filt:
                 n_filt.add(n[0])
                 nb_nfilt += 1

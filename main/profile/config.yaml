@@ -7,8 +7,8 @@ cluster:
     --mail-type={resources.mailtype}
 
 default-resources:
-  - partition=your_partition
-  - mailuser=you@mail
+  - partition=long
+  - mailuser=klein.dylan@outlook.com
   - mailtype=ALL
-  - mem=memory_wanted
-  - cpus=cpus_wanted
+  - mem=50
+  - cpus=6
